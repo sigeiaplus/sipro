@@ -51,19 +51,30 @@
     $('view-app').hidden = qual !== 'app';
   }
 
-  function entrarNoApp(sessao) {
-    const u = SIPRO.auth.usuario(sessao.user);
-    if (usuarioAtual && usuarioAtual.id === u.id) return; // renovação de sessão: nada a refazer
+  let carregandoId = null;
+
+  async function entrarNoApp(sessao) {
+    const id = sessao.user.id;
+    if ((usuarioAtual && usuarioAtual.id === id) || carregandoId === id) return; // renovação de sessão ou busca em andamento
+    carregandoId = id;
+    const cadastro = await SIPRO.auth.cadastro(); // nome vem de public.usuarios
+    if (carregandoId !== id) return; // saiu enquanto carregava
+    carregandoId = null;
+
+    const u = { id, nome: cadastro ? cadastro.nome : '' };
     usuarioAtual = u;
-    const rotulo = u.nome || u.cpfMascarado || 'Usuário';
-    $('topo-nome').textContent = rotulo;
-    $('topo-avatar').textContent = rotulo.trim().charAt(0).toUpperCase();
+    // Sem nome cadastrado: não mostra nome (nunca usa o CPF no lugar) e o avatar fica neutro.
+    $('topo-nome').textContent = u.nome;
+    $('topo-avatar').innerHTML = u.nome
+      ? escapar(u.nome.charAt(0).toUpperCase())
+      : '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.6-3.6 3.5-5.5 7-5.5s6.4 1.9 7 5.5"/></svg>';
     mostrar('app');
     SIPRO.router.ativar({ usuario: u });
   }
 
   function irParaLogin() {
     usuarioAtual = null;
+    carregandoId = null;
     SIPRO.router.desativar();
     fecharMenu();
     SIPRO.login.resetar();

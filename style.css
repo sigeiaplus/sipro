@@ -188,13 +188,10 @@ h1, h2, p { margin: 0; }
 .pagina__cab { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .pagina__cab h2 { font-size: 26px; font-weight: 700; letter-spacing: -.02em; color: var(--marinho); }
 .pagina__cab p { margin-top: 6px; color: var(--suave); font-size: 15px; }
-.pagina__cab--sec { align-items: center; margin-bottom: -8px; }
-.pagina__cab--sec h3 { font-size: 17px; font-weight: 700; color: var(--marinho); }
 .selo { flex: none; padding: 5px 10px; font-size: 12px; font-weight: 600; color: var(--laranja-escuro); background: var(--laranja-claro); border-radius: 999px; }
 .carregando-modulo { color: var(--suave); }
 
 .grade { display: grid; gap: 16px; }
-.grade--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .grade--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
 .boas-vindas { padding: 28px 32px; background: var(--laranja-claro); border: 1px solid #FAD9C2; border-left: 6px solid var(--laranja); border-radius: 16px; }
@@ -202,12 +199,7 @@ h1, h2, p { margin: 0; }
 .boas-vindas h2 { margin-top: 6px; font-size: clamp(24px, 3vw, 32px); font-weight: 800; letter-spacing: -.02em; color: var(--marinho); }
 .boas-vindas p { color: var(--suave); }
 .boas-vindas h2 + p { margin-top: 8px; max-width: 60ch; line-height: 1.6; }
-.boas-vindas__ident { margin-top: 14px; font-size: 14px; color: var(--marinho) !important; font-weight: 600; }
 
-.indicador { padding: 20px; background: #fff; border: 1px solid var(--borda); border-radius: 16px; }
-.indicador__rotulo { font-size: 14px; font-weight: 600; color: var(--suave); }
-.indicador__valor { margin-top: 10px; font-size: 36px; font-weight: 800; letter-spacing: -.03em; color: var(--laranja-escuro); line-height: 1; }
-.indicador__nota { margin-top: 8px; font-size: 13px; color: #8A847D; }
 
 .bloco-vazio { padding: 24px; background: #fff; border: 1.5px dashed #D9CFC5; border-radius: 16px; min-height: 140px; }
 .bloco-vazio--grande { min-height: 180px; }
@@ -218,8 +210,6 @@ h1, h2, p { margin: 0; }
 .btn--sec { width: auto; height: 44px; margin: 0; padding: 0 20px; box-shadow: none; }
 
 .scrim { position: fixed; inset: 0; z-index: 20; background: rgba(18,35,61,.45); }
-
-@media (max-width: 1000px) { .grade--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 @media (max-width: 860px) {
   .side {
@@ -236,5 +226,43 @@ h1, h2, p { margin: 0; }
   .boas-vindas { padding: 22px 20px; }
   .pagina__cab { flex-direction: column; gap: 10px; }
 }
-@media (max-width: 480px) { .grade--4 { grid-template-columns: 1fr 1fr; gap: 12px; } .indicador { padding: 16px; } .indicador__valor { font-size: 30px; } }
 @media (prefers-reduced-motion: reduce) { .side { transition: none; } }
+
+/* =====================================================
+   Gestão da Rede — formulários, listas e situação
+   ===================================================== */
+.field select {
+  width: 100%; height: 50px; padding: 0 16px;
+  font: inherit; font-size: 16px; color: var(--texto);
+  background: #fff; border: 1.5px solid var(--borda); border-radius: var(--raio);
+  transition: border-color .2s, box-shadow .2s;
+}
+.field select:hover { border-color: #CFC7BE; }
+.field select:focus { outline: none; border-color: var(--laranja); box-shadow: 0 0 0 4px rgba(242,106,27,.18); }
+.field.erro select { border-color: var(--erro); }
+
+.painel { padding: 28px; background: #fff; border: 1px solid var(--borda); border-radius: 16px; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }
+.form-grid .field--cheio { grid-column: 1 / -1; }
+.form-acoes { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+.form-acoes .btn { width: auto; height: 48px; margin: 0; padding: 0 28px; }
+.btn--neutro { color: var(--marinho); background: #fff; border: 1.5px solid var(--borda); box-shadow: none; }
+.btn--neutro:hover { background: var(--laranja-claro); }
+
+.rede-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.rede-item { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 20px; background: #fff; border: 1px solid var(--borda); border-radius: 14px; }
+.rede-item__nome { font-weight: 700; color: var(--marinho); overflow-wrap: anywhere; }
+.rede-item__meta { margin-top: 4px; font-size: 13px; color: var(--suave); }
+.rede-item__acoes { display: flex; align-items: center; gap: 12px; flex: none; }
+.rede-item__acoes .btn { height: 40px; padding: 0 16px; font-size: 14px; }
+
+.badge { padding: 4px 10px; font-size: 12px; font-weight: 700; border-radius: 999px; }
+.badge--ativa { color: #067647; background: #ECFDF3; }
+.badge--inativa { color: #475467; background: #F2F4F7; }
+.badge--suspensa { color: #B54708; background: #FFFAEB; }
+
+@media (max-width: 860px) {
+  .painel { padding: 20px 16px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .rede-item { flex-direction: column; align-items: flex-start; }
+}

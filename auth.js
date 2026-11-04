@@ -24,16 +24,17 @@
     return 'Não foi possível entrar agora. Tente novamente em instantes.';
   }
 
-  /** Dados do usuário autenticado, prontos para exibir. */
-  function usuario(user) {
-    if (!user) return null;
-    const cpf = (user.email || '').split('@')[0].replace(/\D/g, '');
-    return {
-      id: user.id,
-      nome: ((user.user_metadata && user.user_metadata.nome) || '').trim(),
-      cpf,
-      cpfMascarado: cpf.length === 11 ? `***.${cpf.slice(3, 6)}.${cpf.slice(6, 9)}-**` : '',
-    };
+  /** Nome do usuário autenticado, lido de public.usuarios.
+      Não envia id nem CPF: o RLS devolve só o registro de auth.uid(). */
+  async function cadastro() {
+    if (!client) return null;
+    try {
+      const { data, error } = await client.from('usuarios').select('nome').maybeSingle();
+      const nome = data && typeof data.nome === 'string' ? data.nome.trim() : '';
+      return error || !nome ? null : { nome };
+    } catch (_) {
+      return null;
+    }
   }
 
   async function sessao() {
@@ -63,9 +64,17 @@
   /** Observa login, logout e renovação de sessão. Retorna função para parar de observar. */
   function aoMudar(callback) {
     if (!client) return () => {};
-    const { data } = client.auth.onAuthStateChange((evento, s) => callback(evento, s));
+    // setTimeout: o Supabase não permite novas chamadas dentro do próprio callback de sessão.
+    const { data } = client.auth.onAuthStateChange((evento, s) => setTimeout(() => callback(evento, s), 0));
     return () => data.subscription.unsubscribe();
   }
 
-  SIPRO.auth = { disponivel: () => !!client, sessao, autenticado, entrar, sair, aoMudar, usuario };
+  SIPRO.auth = { disponivel: () => !!client, sessao, autenticado, entrar, sair, aoMudar, cadastro };
+
+  /** Acesso controlado ao banco para os módulos: apenas tabelas e funções (RPC).
+      Não expõe auth nem o cliente em si; a segurança real vem do RLS. */
+  SIPRO.db = {
+    from: (tabela) => client.from(tabela),
+    rpc: (nome, args) => client.rpc(nome, args),
+  };
 })();
