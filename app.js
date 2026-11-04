@@ -1,87 +1,92 @@
-/* SIPRO+ — Tela de login (Etapa 1: somente interface)
-   A autenticação real será conectada na próxima etapa. Nada aqui valida
-   credenciais, guarda senha ou simula acesso. */
+/* SIPRO+ — Inicialização geral: troca entre login e ambiente administrativo,
+   cabeçalho, menu móvel, logout e utilitários compartilhados (SIPRO.ui).
+   O código de cada tela fica no arquivo do seu módulo. */
 (() => {
   'use strict';
+  const SIPRO = (window.SIPRO = window.SIPRO || { modulos: {} });
+  const $ = (id) => document.getElementById(id);
 
-  const form = document.getElementById('form-login');
-  const cpf = document.getElementById('cpf');
-  const senha = document.getElementById('senha');
-  const olho = document.getElementById('btn-olho');
-  const aviso = document.getElementById('aviso');
+  /* ---------- Utilitários compartilhados ---------- */
+  const escapar = (t) => String(t).replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-  document.getElementById('ano').textContent = new Date().getFullYear();
-
-  /* --- CPF: máscara e conferência de formato (apenas ajuda ao usuário) --- */
-  const soDigitos = (v) => v.replace(/\D/g, '').slice(0, 11);
-
-  const mascara = (d) => d
-    .replace(/^(\d{3})(\d)/, '$1.$2')
-    .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
-    .replace(/\.(\d{3})(\d)/, '.$1-$2');
-
-  function cpfValido(d) {
-    if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false;
-    for (const tam of [9, 10]) {
-      let soma = 0;
-      for (let i = 0; i < tam; i++) soma += Number(d[i]) * (tam + 1 - i);
-      if (((soma * 10) % 11) % 10 !== Number(d[tam])) return false;
-    }
-    return true;
+  /** Layout padrão das telas estruturais (módulos ainda sem funcionalidades). */
+  function telaEstrutural({ titulo, descricao, secoes }) {
+    return `
+      <div class="pagina">
+        <div class="pagina__cab">
+          <div><h2>${escapar(titulo)}</h2><p>${escapar(descricao)}</p></div>
+          <span class="selo">Tela estrutural</span>
+        </div>
+        <div class="grade grade--2">
+          ${secoes.map((s) => `
+            <section class="bloco-vazio">
+              <h3>${escapar(s)}</h3>
+              <p>Em desenvolvimento.</p>
+            </section>`).join('')}
+        </div>
+      </div>`;
   }
 
-  cpf.addEventListener('input', () => {
-    cpf.value = mascara(soDigitos(cpf.value));
-    limpar('cpf');
-  });
-  senha.addEventListener('input', () => limpar('senha'));
-
-  /* --- Mostrar/ocultar senha --- */
-  olho.addEventListener('click', () => {
-    const mostrar = senha.type === 'password';
-    senha.type = mostrar ? 'text' : 'password';
-    olho.setAttribute('aria-pressed', String(mostrar));
-    olho.setAttribute('aria-label', mostrar ? 'Ocultar senha' : 'Mostrar senha');
-    senha.focus();
-  });
-
-  /* --- Mensagens de erro por campo --- */
-  function erro(nome, msg) {
-    const campo = form.querySelector(`[data-field="${nome}"]`);
-    campo.classList.remove('erro');
-    void campo.offsetWidth; // reinicia a animação
-    campo.classList.add('erro');
-    campo.querySelector('.field__erro').textContent = msg;
-    campo.querySelector('input').setAttribute('aria-invalid', 'true');
+  const raiz = $('view-app');
+  function fecharMenu() {
+    raiz.classList.remove('menu-aberto');
+    $('scrim').hidden = true;
+    $('btn-menu').setAttribute('aria-expanded', 'false');
   }
-  function limpar(nome) {
-    const campo = form.querySelector(`[data-field="${nome}"]`);
-    campo.classList.remove('erro');
-    campo.querySelector('.field__erro').textContent = '';
-    campo.querySelector('input').removeAttribute('aria-invalid');
-    aviso.textContent = '';
-    aviso.classList.remove('info');
+  function abrirMenu() {
+    raiz.classList.add('menu-aberto');
+    $('scrim').hidden = false;
+    $('btn-menu').setAttribute('aria-expanded', 'true');
   }
 
-  /* --- Envio --- */
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    aviso.textContent = '';
-    aviso.classList.remove('info');
+  SIPRO.ui = { escapar, telaEstrutural, fecharMenu };
 
-    const digitos = soDigitos(cpf.value);
-    let primeiroInvalido = null;
+  /* ---------- Troca de telas ---------- */
+  let usuarioAtual = null;
 
-    if (!digitos) { erro('cpf', 'Informe o seu CPF.'); primeiroInvalido = cpf; }
-    else if (!cpfValido(digitos)) { erro('cpf', 'CPF inválido. Confira os números.'); primeiroInvalido = cpf; }
+  function mostrar(qual) {
+    $('splash').hidden = true;
+    $('view-login').hidden = qual !== 'login';
+    $('view-app').hidden = qual !== 'app';
+  }
 
-    if (!senha.value) { erro('senha', 'Informe a sua senha.'); primeiroInvalido = primeiroInvalido || senha; }
+  function entrarNoApp(sessao) {
+    const u = SIPRO.auth.usuario(sessao.user);
+    if (usuarioAtual && usuarioAtual.id === u.id) return; // renovação de sessão: nada a refazer
+    usuarioAtual = u;
+    const rotulo = u.nome || u.cpfMascarado || 'Usuário';
+    $('topo-nome').textContent = rotulo;
+    $('topo-avatar').textContent = rotulo.trim().charAt(0).toUpperCase();
+    mostrar('app');
+    SIPRO.router.ativar({ usuario: u });
+  }
 
-    if (primeiroInvalido) { primeiroInvalido.focus(); return; }
+  function irParaLogin() {
+    usuarioAtual = null;
+    SIPRO.router.desativar();
+    fecharMenu();
+    SIPRO.login.resetar();
+    mostrar('login');
+  }
 
-    /* PRÓXIMA ETAPA: enviar { cpf: digitos, senha: senha.value } ao serviço de
-       autenticação segura (a ser definido) e tratar a resposta aqui. */
-    aviso.classList.add('info');
-    aviso.textContent = 'A autenticação ainda não está conectada. Esta é a etapa de interface.';
+  /* ---------- Eventos do ambiente administrativo ---------- */
+  $('btn-menu').addEventListener('click', () => (raiz.classList.contains('menu-aberto') ? fecharMenu() : abrirMenu()));
+  $('scrim').addEventListener('click', fecharMenu);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fecharMenu(); });
+
+  $('btn-sair').addEventListener('click', async (e) => {
+    e.currentTarget.disabled = true;
+    await SIPRO.auth.sair(); // a mudança de sessão leva de volta ao login
+    e.currentTarget.disabled = false;
   });
+
+  /* ---------- Início ---------- */
+  async function iniciar() {
+    if (!SIPRO.auth.disponivel()) { irParaLogin(); return; }
+    SIPRO.auth.aoMudar((_evento, sessao) => (sessao ? entrarNoApp(sessao) : irParaLogin()));
+    const sessao = await SIPRO.auth.sessao(); // recupera a sessão salva ao atualizar a página
+    if (sessao) entrarNoApp(sessao); else irParaLogin();
+  }
+  iniciar();
 })();
