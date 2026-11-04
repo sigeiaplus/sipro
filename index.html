@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#F26A1B">
+  <title>Entrar | SIPRO+</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="login">
+
+    <section class="brand" aria-label="Apresentação do SIPRO+">
+      <div class="brand__logo">
+        <span class="brand__mark" aria-hidden="true">S</span>
+        <span class="brand__name">SIPRO<b>+</b></span>
+      </div>
+      <div class="brand__body">
+        <h1 class="brand__title">A gestão da rede escolar em um só lugar.</h1>
+        <p class="brand__text">Acesse o ambiente administrativo com seu CPF e sua senha.</p>
+      </div>
+      <p class="brand__foot">Ecossistema SIGEA+</p>
+    </section>
+
+    <section class="panel">
+      <form class="card" id="form-login" novalidate>
+        <header class="card__head">
+          <h2>Entrar</h2>
+          <p>Informe seus dados para continuar.</p>
+        </header>
+
+        <div class="field" data-field="cpf">
+          <label for="cpf">CPF</label>
+          <input id="cpf" name="cpf" type="text" inputmode="numeric" autocomplete="username"
+                 placeholder="000.000.000-00" maxlength="14" aria-describedby="cpf-erro" required>
+          <p class="field__erro" id="cpf-erro" role="alert"></p>
+        </div>
+
+        <div class="field" data-field="senha">
+          <label for="senha">Senha</label>
+          <div class="field__senha">
+            <input id="senha" name="senha" type="password" autocomplete="current-password"
+                   placeholder="Digite sua senha" aria-describedby="senha-erro" required>
+            <button type="button" class="olho" id="btn-olho" aria-label="Mostrar senha" aria-pressed="false">
+              <svg class="olho__aberto" viewBox="0 0 24 24" aria-hidden="true"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="olho__fechado" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 5.1A10.5 10.5 0 0 1 12 5c6.5 0 10.5 7 10.5 7a17.7 17.7 0 0 1-3.1 3.9M6.5 6.6A17.4 17.4 0 0 0 1.5 12S5.5 19 12 19a10 10 0 0 0 4.4-1M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+            </button>
+          </div>
+          <p class="field__erro" id="senha-erro" role="alert"></p>
+        </div>
+
+        <button type="submit" class="btn" id="btn-entrar">Entrar</button>
+        <p class="aviso" id="aviso" role="status" aria-live="polite"></p>
+      </form>
+
+      <p class="rodape">© <span id="ano"></span> SIPRO+</p>
+    </section>
+
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
