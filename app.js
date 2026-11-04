@@ -40,7 +40,15 @@
     $('btn-menu').setAttribute('aria-expanded', 'true');
   }
 
-  SIPRO.ui = { escapar, telaEstrutural, fecharMenu };
+  /** Abas do módulo Gestão da Rede (cada aba é uma tela com seu próprio arquivo JS). */
+  const ABAS_REDE = [['rede', 'Dados da Rede'], ['rede-area', 'Área de Atuação']];
+  function abasRede(ativa) {
+    return `<nav class="abas" aria-label="Seções da Gestão da Rede">${ABAS_REDE.map(([id, rotulo]) =>
+      `<a class="abas__item" href="#/${id}"${id === ativa ? ' aria-current="page"' : ''}>${escapar(rotulo)}</a>`).join('')}</nav>`;
+  }
+
+  SIPRO.ui = { escapar, telaEstrutural, fecharMenu, abasRede };
+  SIPRO.estado = { redeId: null }; // rede selecionada, compartilhada entre as telas da Gestão da Rede
 
   /* ---------- Troca de telas ---------- */
   let usuarioAtual = null;
@@ -74,6 +82,7 @@
 
   function irParaLogin() {
     usuarioAtual = null;
+    SIPRO.estado.redeId = null;
     carregandoId = null;
     SIPRO.router.desativar();
     fecharMenu();

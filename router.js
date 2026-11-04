@@ -12,6 +12,7 @@
       icone: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>' },
     { id: 'rede', rotulo: 'Gestão da Rede', arquivo: 'rede.js',
       icone: '<circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M12 7.5v4M12 11.5l-5.5 5.5M12 11.5l5.5 5.5"/>' },
+    { id: 'rede-area', rotulo: 'Área de Atuação', arquivo: 'rede-area.js', pai: 'rede', oculta: true, icone: '' }, // subtela: fora do menu
     { id: 'unidades', rotulo: 'Unidades Escolares', arquivo: 'unidades.js',
       icone: '<path d="M3 21h18M5 21V9l7-5 7 5v12M10 21v-6h4v6"/>' },
     { id: 'usuarios', rotulo: 'Usuários', arquivo: 'usuarios.js',
@@ -32,7 +33,7 @@
   };
 
   function desenharMenu() {
-    document.getElementById('menu').innerHTML = ROTAS.map((r) =>
+    document.getElementById('menu').innerHTML = ROTAS.filter((r) => !r.oculta).map((r) =>
       `<a class="menu__item" href="#/${r.id}" data-rota="${r.id}">${icone(r.icone)}<span>${r.rotulo}</span></a>`
     ).join('');
   }
@@ -54,10 +55,10 @@
     const minha = ++sequencia;
 
     document.querySelectorAll('#menu .menu__item').forEach((a) => {
-      if (a.dataset.rota === rota.id) a.setAttribute('aria-current', 'page');
+      if (a.dataset.rota === (rota.pai || rota.id)) a.setAttribute('aria-current', 'page');
       else a.removeAttribute('aria-current');
     });
-    document.getElementById('topo-titulo').textContent = rota.rotulo;
+    document.getElementById('topo-titulo').textContent = (ROTAS.find((r) => r.id === rota.pai) || rota).rotulo;
     document.title = `${rota.rotulo} | SIPRO+`;
     if (SIPRO.ui) SIPRO.ui.fecharMenu();
 

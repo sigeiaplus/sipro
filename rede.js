@@ -87,7 +87,8 @@
     <div class="pagina__cab">
       <div><h2>Gestão da Rede</h2><p>Cadastro e acompanhamento das redes de ensino.</p></div>
       ${comBotao ? '<button type="button" class="btn btn--sec" id="rede-nova">Nova rede</button>' : ''}
-    </div>`;
+    </div>
+    ${SIPRO.ui.abasRede('rede')}`;
 
   async function carregar(msg) {
     const pag = pagina;
@@ -122,7 +123,10 @@
 
     q('rede-nova').addEventListener('click', () => desenharForm(null));
     pagina.querySelectorAll('[data-editar]').forEach((b) =>
-      b.addEventListener('click', () => desenharForm(redes.find((r) => r.id === b.dataset.editar) || null)));
+      b.addEventListener('click', () => {
+        SIPRO.estado.redeId = b.dataset.editar;
+        desenharForm(redes.find((r) => r.id === b.dataset.editar) || null);
+      }));
   }
 
   const opcoes = (lista, atual) =>
@@ -137,6 +141,7 @@
       <div class="pagina__cab">
         <div><h2>${rede ? 'Editar rede' : 'Nova rede'}</h2><p>Dados cadastrais da rede de ensino. Campos com * são obrigatórios.</p></div>
       </div>
+      ${SIPRO.ui.abasRede('rede')}
       <form class="painel" id="rd-form" novalidate>
         <div id="rd-aviso"></div>
         <div class="form-grid">
@@ -207,6 +212,7 @@
     if (pagina !== pag) return;
     if (error) return falhar(mensagemDeErro(error));
     if (!data || !data.length) return falhar('Nenhuma alteração foi salva. Verifique sua permissão e tente novamente.');
+    if (!rede) SIPRO.estado.redeId = data[0].id;
     await carregar(rede ? 'Rede atualizada.' : 'Rede cadastrada.');
   }
 
