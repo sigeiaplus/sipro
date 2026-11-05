@@ -282,3 +282,112 @@ a.btn { display: inline-flex; align-items: center; justify-content: center; text
 .rede-atual { color: var(--suave); }
 .seletor-rede { max-width: 420px; margin-bottom: 0; }
 .dica { font-size: 14px; line-height: 1.5; color: var(--suave); }
+
+/* ---------- Ambiente da rede ---------- */
+.voltar { align-self: flex-start; font-size: 14px; font-weight: 600; text-decoration: none; color: var(--suave); }
+.voltar:hover { color: var(--laranja-escuro); }
+.voltar:focus-visible { outline: 2px solid var(--laranja); outline-offset: 3px; border-radius: 4px; }
+.pagina__cab .badge { flex: none; }
+
+.rede-item--link { text-decoration: none; color: inherit; transition: border-color .2s, background .2s; }
+.rede-item--link:hover { border-color: var(--laranja); background: var(--laranja-claro); }
+.rede-item--link:focus-visible { outline: 2px solid var(--laranja); outline-offset: 2px; }
+
+.rede-amb { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 24px; align-items: start; }
+.rede-nav { display: flex; flex-direction: column; gap: 2px; padding: 8px; background: #fff; border: 1px solid var(--borda); border-radius: 16px; position: sticky; top: 16px; }
+.rede-nav__item { padding: 10px 14px; font-size: 14px; font-weight: 600; text-decoration: none; color: var(--suave); border-radius: 10px; transition: color .2s, background .2s; }
+.rede-nav__item:hover { color: var(--laranja-escuro); background: var(--laranja-claro); }
+.rede-nav__item[aria-current="page"] { color: var(--laranja-escuro); background: var(--laranja-claro); box-shadow: inset 3px 0 0 var(--laranja); }
+.rede-nav__item:focus-visible { outline: 2px solid var(--laranja); outline-offset: -2px; }
+.rede-amb__corpo { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.rede-secao__titulo { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.01em; color: var(--marinho); }
+
+.indicadores { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.indicador { display: flex; flex-direction: column; gap: 6px; padding: 20px; text-decoration: none; color: inherit; background: #fff; border: 1px solid var(--borda); border-radius: 16px; transition: border-color .2s; }
+.indicador:hover { border-color: var(--laranja); }
+.indicador:focus-visible { outline: 2px solid var(--laranja); outline-offset: 2px; }
+.indicador__rotulo { font-size: 13px; font-weight: 600; color: var(--suave); }
+.indicador__valor { font-size: 32px; font-weight: 800; line-height: 1.1; letter-spacing: -.02em; color: var(--marinho); }
+.indicador__valor--vazio { color: #A39D96; }
+.indicador__nota { font-size: 13px; color: var(--suave); }
+
+.dados { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 20px; margin: 0 0 20px; }
+.dados__item dt { font-size: 13px; font-weight: 600; color: var(--suave); }
+.dados__item dd { margin: 4px 0 0; font-weight: 600; color: var(--marinho); overflow-wrap: anywhere; }
+.dados__vazio { font-weight: 400; color: #A39D96; }
+
+@media (max-width: 860px) {
+  .rede-amb { grid-template-columns: minmax(0, 1fr); }
+  .rede-nav { flex-direction: row; overflow-x: auto; position: static; }
+  .rede-nav__item { white-space: nowrap; }
+  .indicadores { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dados { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 520px) {
+  .indicadores { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Caixa de seleção nos formulários */
+.field--check label { display: flex; align-items: center; gap: 10px; margin: 0; font-weight: 600; cursor: pointer; }
+.field--check input[type="checkbox"] { width: 20px; height: 20px; flex: none; accent-color: var(--laranja); }
+.rede-item__nome .badge { margin-left: 8px; vertical-align: middle; }
+.rede-item__acoes { flex-wrap: wrap; justify-content: flex-end; }
+
+/* Escala do ambiente administrativo: telas largas ficam 15% menores (botões, campos, textos e menu).
+   Para mudar o tamanho, altere o 0.85 em todas as linhas abaixo. */
+@media (min-width: 861px) {
+  .app { zoom: 0.85; min-height: calc(100vh / 0.85); }
+  .side { height: calc(100vh / 0.85); height: calc(100dvh / 0.85); }
+}
+
+.field__info { margin-top: 6px; font-size: 13px; color: var(--suave); }
+.field__info:empty { display: none; }
+
+/* =====================================================
+   Loader padrão (SIPRO.ui.carregando) — anel laranja girando
+   ===================================================== */
+.carregando {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  min-height: 280px; padding: 48px 24px; text-align: center;
+  background: #FFFDFB; border: 1px solid var(--borda); border-radius: 24px;
+}
+.carregando__anel {
+  position: relative; display: grid; place-items: center; flex: none;
+  width: 64px; height: 64px; margin-bottom: 14px; border-radius: 50%;
+  border: 5px solid rgba(242,106,27,.2);
+}
+.carregando__anel::after { /* arco que gira */
+  content: ""; position: absolute; inset: -5px; border-radius: 50%;
+  border: 5px solid transparent; border-right-color: var(--laranja);
+  animation: girar .9s linear infinite;
+}
+.carregando__ico { width: 26px; height: 26px; fill: none; stroke: var(--laranja); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.carregando__titulo { font-size: 14px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--marinho); }
+.carregando__texto { font-size: 14px; color: var(--suave); }
+@media (prefers-reduced-motion: reduce) { .carregando__anel::after { animation-duration: 2.4s; } }
+
+/* =====================================================
+   Ajustes de layout do ambiente da rede
+   ===================================================== */
+/* Conteúdo de cada seção: espaçamento uniforme entre avisos, listas e botões */
+#rede-secao > div { display: flex; flex-direction: column; gap: 16px; }
+.rede-amb__corpo .aviso { margin-top: 0; }
+#rede-cab { align-items: center; }
+.rede-nav { top: 88px; } /* abaixo do cabeçalho fixo */
+
+/* Hierarquia dos botões: principal = cheio; ações da lista = contorno */
+.rede-item__acoes .btn--sec { color: var(--laranja-escuro); background: #fff; border: 1.5px solid var(--laranja); }
+.rede-item__acoes .btn--sec:hover { background: var(--laranja-claro); }
+.rede-item__acoes .btn--neutro { color: var(--suave); }
+.rede-item__acoes .btn--neutro:hover { color: var(--erro); border-color: var(--erro); background: #FEF3F2; }
+.rede-item--principal { border-left: 4px solid var(--laranja); }
+.rede-item { transition: border-color .2s, box-shadow .2s; }
+.rede-item:not(.rede-item--link):hover { box-shadow: 0 6px 18px -12px rgba(18,35,61,.35); }
+.rede-item__nome { line-height: 1.4; }
+.badge { white-space: nowrap; }
+
+@media (max-width: 860px) {
+  .rede-nav { top: auto; }
+  .rede-item__acoes { width: 100%; justify-content: flex-start; }
+  .carregando { min-height: 220px; padding: 36px 16px; }
+}

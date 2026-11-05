@@ -1,5 +1,5 @@
-/* SIPRO+ — Gestão da Rede › Área de Atuação
-   Cadastra onde cada rede atua (public.redes_areas_atuacao), conforme o tipo da rede:
+/* SIPRO+ — Ambiente da rede › Área de Atuação (seção)
+   Recebe a rede aberta pelo ambiente (amb.rede) e cadastra onde cada rede atua (public.redes_areas_atuacao), conforme o tipo da rede:
    estadual = um estado; municipal = um município; federal, privada e outra = várias áreas
    (estados, municípios ou descrição livre). As regras também são impostas pelo banco. */
 (() => {
@@ -16,7 +16,6 @@
 
   let pagina = null; // elemento da tela atual; null quando a tela foi fechada
   let estados = [];
-  let redes = [];
   let rede = null;
   let areas = [];
   let cacheMunicipios = {};
@@ -24,12 +23,6 @@
   const q = (id) => pagina.querySelector('#' + id);
   const aviso = (texto, tipo) => (texto ? `<div class="aviso ${tipo}" role="${tipo === 'erro' ? 'alert' : 'status'}">${esc(texto)}</div>` : '');
   const nomeUf = (uf) => (estados.find((e) => e.uf === uf) || { nome: uf }).nome;
-  const cabecalho = () => `
-    <div class="pagina__cab">
-      <div><h2>Gestão da Rede</h2><p>Cadastro e acompanhamento das redes de ensino.</p></div>
-    </div>
-    ${SIPRO.ui.abasRede('rede-area')}`;
-
   function mensagemDeErro(err) {
     if (err.code === 'P0001' && err.message) return err.message; // regras do banco, já em português
     if (err.code === '23505') return 'Esta localidade já está cadastrada nesta rede.';
@@ -49,27 +42,10 @@
   }
 
   /* ---------- Carregamento ---------- */
-  const seletorHtml = () => (redes.length > 1
-    ? `<div class="field seletor-rede"><label for="ar-rede">Rede</label><select id="ar-rede"><option value="">Selecione a rede</option>${
-      redes.map((r) => `<option value="${esc(r.id)}"${rede && rede.id === r.id ? ' selected' : ''}>${esc(r.nome)}</option>`).join('')}</select></div>`
-    : `<p class="rede-atual">Rede: <strong>${esc(redes[0].nome)}</strong></p>`);
-
-  function ligarSeletor() {
-    const sel = pagina.querySelector('#ar-rede');
-    if (!sel) return;
-    sel.addEventListener('change', () => {
-      rede = redes.find((r) => r.id === sel.value) || null;
-      SIPRO.estado.redeId = rede ? rede.id : null;
-      areas = [];
-      if (rede) carregarAreas(); else desenhar();
-    });
-  }
-
   function desenharErro(texto) {
-    pagina.innerHTML = cabecalho() + seletorHtml() + aviso(texto, 'erro') +
+    pagina.innerHTML = aviso(texto, 'erro') +
       '<div><button type="button" class="btn btn--sec" id="ar-retentar">Tentar novamente</button></div>';
-    ligarSeletor();
-    q('ar-retentar').addEventListener('click', () => (rede ? carregarAreas() : iniciar()));
+    q('ar-retentar').addEventListener('click', () => (estados.length ? carregarAreas() : iniciar()));
   }
 
   async function carregarAreas(msg) {
@@ -91,30 +67,24 @@
 
   /* ---------- Telas ---------- */
   function desenhar(msg, tipoMsg, form) {
-    let conteudo;
-    if (!rede) {
-      conteudo = '<section class="bloco-vazio"><h3>Selecione uma rede</h3><p>Escolha a rede para consultar ou cadastrar sua área de atuação.</p></section>';
-    } else {
-      const unica = UNICA(rede.tipo);
-      const itens = areas.map((a) => `
-        <li class="rede-item">
-          <div><p class="rede-item__nome">${esc(a.rotulo)}</p><p class="rede-item__meta">${esc(a.meta)}</p></div>
-          <div class="rede-item__acoes">
-            ${unica ? `<button type="button" class="btn btn--sec" data-alterar="${esc(a.id)}">Alterar</button>` : ''}
-            <button type="button" class="btn btn--neutro" data-remover="${esc(a.id)}">Remover</button>
-          </div>
-        </li>`).join('');
-      const podeAdicionar = !form && (!unica || areas.length === 0);
-      conteudo = `
-        <p class="dica">${esc(REGRA[rede.tipo] || REGRA.outros)}</p>
-        ${areas.length ? `<ul class="rede-lista">${itens}</ul>`
-          : '<section class="bloco-vazio"><h3>Nenhuma área de atuação cadastrada</h3><p>Use "Adicionar área" para informar onde esta rede atua.</p></section>'}
-        ${podeAdicionar ? '<div><button type="button" class="btn btn--sec" id="ar-adicionar">Adicionar área</button></div>' : ''}
-        ${form ? htmlForm(form) : ''}`;
-    }
+    const unica = UNICA(rede.tipo);
+    const itens = areas.map((a) => `
+      <li class="rede-item">
+        <div><p class="rede-item__nome">${esc(a.rotulo)}</p><p class="rede-item__meta">${esc(a.meta)}</p></div>
+        <div class="rede-item__acoes">
+          ${unica ? `<button type="button" class="btn btn--sec" data-alterar="${esc(a.id)}">Alterar</button>` : ''}
+          <button type="button" class="btn btn--neutro" data-remover="${esc(a.id)}">Remover</button>
+        </div>
+      </li>`).join('');
+    const podeAdicionar = !form && (!unica || areas.length === 0);
+    const conteudo = `
+      <p class="dica">${esc(REGRA[rede.tipo] || REGRA.outros)}</p>
+      ${areas.length ? `<ul class="rede-lista">${itens}</ul>`
+        : '<section class="bloco-vazio"><h3>Nenhuma área de atuação cadastrada</h3><p>Use "Adicionar área" para informar onde esta rede atua.</p></section>'}
+      ${podeAdicionar ? '<div><button type="button" class="btn btn--sec" id="ar-adicionar">Adicionar área</button></div>' : ''}
+      ${form ? htmlForm(form) : ''}`;
 
-    pagina.innerHTML = cabecalho() + seletorHtml() + aviso(msg, tipoMsg) + conteudo;
-    ligarSeletor();
+    pagina.innerHTML = aviso(msg, tipoMsg) + conteudo;
     const add = pagina.querySelector('#ar-adicionar');
     if (add) add.addEventListener('click', () => desenhar(null, null, { editId: null, valores: null }));
     pagina.querySelectorAll('[data-alterar]').forEach((b) => b.addEventListener('click', () => {
@@ -235,43 +205,25 @@
 
   async function iniciar() {
     const pag = pagina;
-    const [rEst, rRedes] = await Promise.all([
-      SIPRO.db.from('estados').select('uf, nome').order('nome'),
-      SIPRO.db.from('redes').select('id, nome, tipo, situacao').order('nome'),
-    ]);
+    const { data, error } = await SIPRO.db.from('estados').select('uf, nome').order('nome');
     if (pagina !== pag) return;
-    if (rEst.error || rRedes.error) { pag.innerHTML = cabecalho() + aviso('Não foi possível carregar os dados.', 'erro'); return; }
-    estados = rEst.data || [];
-    redes = rRedes.data || [];
-    if (!redes.length) {
-      pag.innerHTML = cabecalho() +
-        '<section class="bloco-vazio"><h3>Nenhuma rede cadastrada</h3><p>Cadastre a rede em Dados da Rede antes de informar a área de atuação.</p></section>' +
-        '<div><a class="btn btn--sec" href="#/rede">Ir para Dados da Rede</a></div>';
-      return;
-    }
-    rede = redes.find((r) => r.id === SIPRO.estado.redeId) || (redes.length === 1 ? redes[0] : null);
-    SIPRO.estado.redeId = rede ? rede.id : null;
-    if (rede) await carregarAreas(); else desenhar();
+    if (error) return desenharErro('Não foi possível carregar os dados.');
+    estados = data || [];
+    await carregarAreas();
   }
 
   SIPRO.modulos['rede-area'] = {
-    async render(el) {
-      el.innerHTML = '<div class="pagina" id="rede-area-pagina"><p class="carregando-modulo" role="status">Carregando...</p></div>';
-      const pag = (pagina = el.querySelector('#rede-area-pagina'));
-      rede = null; areas = []; redes = []; cacheMunicipios = {};
+    async render(el, amb) {
+      pagina = el;
+      rede = amb.rede; // sempre filtrado pelo ID desta rede; o RLS do banco decide o acesso
+      areas = []; estados = []; cacheMunicipios = {};
+      el.innerHTML = SIPRO.ui.carregando();
       try {
-        const { data, error } = await SIPRO.db.rpc('eh_admin');
-        if (pagina !== pag) return;
-        if (error) { pag.innerHTML = cabecalho() + aviso('Não foi possível verificar seu acesso. Recarregue a página.', 'erro'); return; }
-        if (data !== true) {
-          pag.innerHTML = cabecalho() + '<section class="bloco-vazio"><h3>Acesso restrito</h3><p>Esta área é destinada aos administradores do sistema.</p></section>';
-          return;
-        }
         await iniciar();
       } catch (_) {
-        if (pagina === pag) pag.innerHTML = cabecalho() + aviso('Não foi possível abrir esta tela agora.', 'erro');
+        if (pagina === el) el.innerHTML = aviso('Não foi possível abrir esta tela agora.', 'erro');
       }
     },
-    destruir() { pagina = null; rede = null; areas = []; redes = []; cacheMunicipios = {}; },
+    destruir() { pagina = null; rede = null; areas = []; estados = []; cacheMunicipios = {}; },
   };
 })();

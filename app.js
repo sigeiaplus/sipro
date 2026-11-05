@@ -10,6 +10,16 @@
   const escapar = (t) => String(t).replace(/[&<>"']/g, (c) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+  /** Loader padrão (anel laranja girando). Use SIPRO.ui.carregando() em qualquer tela que esteja buscando dados. */
+  const carregando = (titulo = 'Carregando informações...', texto = 'Aguarde um momento enquanto o sistema processa os dados.') => `
+    <div class="carregando" role="status" aria-live="polite">
+      <span class="carregando__anel" aria-hidden="true">
+        <svg class="carregando__ico" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+      </span>
+      <strong class="carregando__titulo">${escapar(titulo)}</strong>
+      <span class="carregando__texto">${escapar(texto)}</span>
+    </div>`;
+
   /** Layout padrão das telas estruturais (módulos ainda sem funcionalidades). */
   function telaEstrutural({ titulo, descricao, secoes }) {
     return `
@@ -40,15 +50,8 @@
     $('btn-menu').setAttribute('aria-expanded', 'true');
   }
 
-  /** Abas do módulo Gestão da Rede (cada aba é uma tela com seu próprio arquivo JS). */
-  const ABAS_REDE = [['rede', 'Dados da Rede'], ['rede-area', 'Área de Atuação']];
-  function abasRede(ativa) {
-    return `<nav class="abas" aria-label="Seções da Gestão da Rede">${ABAS_REDE.map(([id, rotulo]) =>
-      `<a class="abas__item" href="#/${id}"${id === ativa ? ' aria-current="page"' : ''}>${escapar(rotulo)}</a>`).join('')}</nav>`;
-  }
-
-  SIPRO.ui = { escapar, telaEstrutural, fecharMenu, abasRede };
-  SIPRO.estado = { redeId: null }; // rede selecionada, compartilhada entre as telas da Gestão da Rede
+  SIPRO.ui = { escapar, telaEstrutural, fecharMenu, carregando };
+  SIPRO.estado = { redeId: null }; // rede selecionada (ID no banco), compartilhada entre as seções do ambiente da rede
 
   /* ---------- Troca de telas ---------- */
   let usuarioAtual = null;

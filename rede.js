@@ -1,6 +1,9 @@
-/* SIPRO+ — Gestão da Rede › Dados da Rede
-   Lista, cadastra e edita redes (public.redes), incluindo a alteração de situação.
-   A permissão real vem do RLS; aqui só se esconde a tela de quem não é administrador. */
+/* SIPRO+ — Gestão da Rede
+   Registra três módulos:
+   - rede         : listagem das redes; clicar em uma rede abre o ambiente dela (#/rede/<id>)
+   - rede-dados   : seção Dados da Rede (consulta e edição dos dados cadastrais)
+   - rede-config  : seção Configurações (situação da rede)
+   A permissão real vem do RLS; o frontend só esconde telas de quem não é administrador. */
 (() => {
   'use strict';
   const SIPRO = window.SIPRO;
@@ -77,78 +80,31 @@
     return 'Não foi possível concluir agora. Tente novamente em instantes.';
   }
 
-  /* ---------- Estado e telas ---------- */
-  let pagina = null; // elemento da tela atual; null quando a tela foi fechada
-  let redes = [];
+  SIPRO.rede = { TIPOS, SITUACOES, COLUNAS, rotulo }; // compartilhado com o ambiente da rede
 
-  const q = (id) => pagina.querySelector('#' + id);
   const aviso = (texto, tipo) => (texto ? `<div class="aviso ${tipo}" role="${tipo === 'erro' ? 'alert' : 'status'}">${esc(texto)}</div>` : '');
-  const cabecalho = (comBotao) => `
-    <div class="pagina__cab">
-      <div><h2>Gestão da Rede</h2><p>Cadastro e acompanhamento das redes de ensino.</p></div>
-      ${comBotao ? '<button type="button" class="btn btn--sec" id="rede-nova">Nova rede</button>' : ''}
-    </div>
-    ${SIPRO.ui.abasRede('rede')}`;
-
-  async function carregar(msg) {
-    const pag = pagina;
-    const { data, error } = await SIPRO.db.from('redes').select(COLUNAS).order('nome');
-    if (pagina !== pag) return;
-    if (error) {
-      pag.innerHTML = cabecalho(false) + aviso('Não foi possível carregar as redes.', 'erro') +
-        '<div><button type="button" class="btn btn--sec" id="rede-retentar">Tentar novamente</button></div>';
-      q('rede-retentar').addEventListener('click', () => carregar());
-      return;
-    }
-    redes = data || [];
-    desenharLista(msg);
-  }
-
-  function desenharLista(msg) {
-    const itens = redes.map((r) => `
-      <li class="rede-item">
-        <div>
-          <p class="rede-item__nome">${esc(r.nome)}</p>
-          <p class="rede-item__meta">${esc(rotulo(TIPOS, r.tipo))}${r.cnpj ? ' · CNPJ ' + esc(mascaraCnpj(r.cnpj)) : ''}</p>
-        </div>
-        <div class="rede-item__acoes">
-          <span class="badge badge--${esc(r.situacao)}">${esc(rotulo(SITUACOES, r.situacao))}</span>
-          <button type="button" class="btn btn--sec" data-editar="${esc(r.id)}">Editar</button>
-        </div>
-      </li>`).join('');
-
-    pagina.innerHTML = cabecalho(true) + aviso(msg, 'info') + (redes.length
-      ? `<ul class="rede-lista">${itens}</ul>`
-      : `<section class="bloco-vazio"><h3>Nenhuma rede cadastrada</h3><p>Use "Nova rede" para cadastrar a primeira rede de ensino.</p></section>`);
-
-    q('rede-nova').addEventListener('click', () => desenharForm(null));
-    pagina.querySelectorAll('[data-editar]').forEach((b) =>
-      b.addEventListener('click', () => {
-        SIPRO.estado.redeId = b.dataset.editar;
-        desenharForm(redes.find((r) => r.id === b.dataset.editar) || null);
-      }));
-  }
-
   const opcoes = (lista, atual) =>
     '<option value="">Selecione</option>' +
     lista.map(([v, t]) => `<option value="${v}"${v === atual ? ' selected' : ''}>${esc(t)}</option>`).join('');
   const campo = (k, rot, html, cheio) =>
     `<div class="field${cheio ? ' field--cheio' : ''}" id="f-${k}"><label for="rd-${k}">${rot}</label>${html}<p class="field__erro" id="e-${k}"></p></div>`;
 
-  function desenharForm(rede) {
+  /* ---------- Formulário de dados cadastrais (cadastro e edição) ----------
+     Na edição a situação não aparece aqui: ela é alterada em Configurações. */
+  function formularioRede(el, { rede, aoSalvar, aoCancelar }) {
     const r = rede || {};
-    pagina.innerHTML = `
-      <div class="pagina__cab">
-        <div><h2>${rede ? 'Editar rede' : 'Nova rede'}</h2><p>Dados cadastrais da rede de ensino. Campos com * são obrigatórios.</p></div>
-      </div>
-      ${SIPRO.ui.abasRede('rede')}
+    const q = (id) => el.querySelector('#' + id);
+    const vivo = () => el.isConnected;
+    const chaves = ['nome', 'tipo', 'situacao', 'cnpj', 'telefone', 'email'];
+
+    el.innerHTML = `
       <form class="painel" id="rd-form" novalidate>
         <div id="rd-aviso"></div>
         <div class="form-grid">
           ${campo('nome', 'Nome da rede *', `<input id="rd-nome" maxlength="200" autocomplete="off" value="${esc(r.nome || '')}">`, true)}
           ${campo('nomeInst', 'Nome institucional', `<input id="rd-nomeInst" maxlength="200" autocomplete="off" value="${esc(r.nome_institucional || '')}">`, true)}
           ${campo('tipo', 'Tipo *', `<select id="rd-tipo">${opcoes(TIPOS, r.tipo)}</select>`)}
-          ${campo('situacao', 'Situação *', `<select id="rd-situacao">${opcoes(SITUACOES, r.situacao || 'ativa')}</select>`)}
+          ${rede ? '' : campo('situacao', 'Situação *', `<select id="rd-situacao">${opcoes(SITUACOES, 'ativa')}</select>`)}
           ${campo('cnpj', 'CNPJ', `<input id="rd-cnpj" inputmode="numeric" autocomplete="off" placeholder="00.000.000/0000-00" value="${esc(r.cnpj ? mascaraCnpj(r.cnpj) : '')}">`)}
           ${campo('telefone', 'Telefone institucional', `<input id="rd-telefone" inputmode="tel" autocomplete="off" placeholder="(00) 00000-0000" value="${esc(r.telefone_institucional ? mascaraTelefone(r.telefone_institucional) : '')}">`)}
           ${campo('email', 'E-mail institucional', `<input id="rd-email" type="email" autocomplete="off" value="${esc(r.email_institucional || '')}">`, true)}
@@ -161,64 +117,122 @@
 
     q('rd-cnpj').addEventListener('input', (e) => { e.target.value = mascaraCnpj(e.target.value); });
     q('rd-telefone').addEventListener('input', (e) => { e.target.value = mascaraTelefone(e.target.value); });
-    q('rd-cancelar').addEventListener('click', () => desenharLista());
-    q('rd-form').addEventListener('submit', (e) => { e.preventDefault(); salvar(rede); });
-  }
+    q('rd-cancelar').addEventListener('click', aoCancelar);
+    q('rd-form').addEventListener('submit', (e) => { e.preventDefault(); salvar(); });
+    q('rd-nome').focus();
 
-  const lerForm = () => ({
-    nome: q('rd-nome').value, nomeInst: q('rd-nomeInst').value, tipo: q('rd-tipo').value,
-    situacao: q('rd-situacao').value, cnpj: q('rd-cnpj').value, email: q('rd-email').value, telefone: q('rd-telefone').value,
-  });
-
-  function mostrarErros(erros) {
-    ['nome', 'tipo', 'situacao', 'cnpj', 'telefone', 'email'].forEach((k) => {
-      q('f-' + k).classList.toggle('erro', !!erros[k]);
-      q('e-' + k).textContent = erros[k] || '';
+    const lerForm = () => ({
+      nome: q('rd-nome').value, nomeInst: q('rd-nomeInst').value, tipo: q('rd-tipo').value,
+      situacao: rede ? rede.situacao : q('rd-situacao').value,
+      cnpj: q('rd-cnpj').value, email: q('rd-email').value, telefone: q('rd-telefone').value,
     });
-    const primeiro = ['nome', 'tipo', 'situacao', 'cnpj', 'telefone', 'email'].find((k) => erros[k]);
-    if (primeiro) q('rd-' + primeiro).focus();
-  }
 
-  async function salvar(rede) {
-    const pag = pagina;
-    const { erros, dados } = validar(lerForm());
-    q('rd-aviso').innerHTML = '';
-    mostrarErros(erros);
-    if (Object.keys(erros).length) return;
-
-    if (rede && dados.situacao !== rede.situacao && dados.situacao !== 'ativa' &&
-        !window.confirm(`Alterar a situação desta rede para "${rotulo(SITUACOES, dados.situacao)}"? Os cadastros e o histórico são preservados.`)) return;
-
-    const botao = q('rd-salvar');
-    botao.disabled = true;
-    const falhar = (texto) => {
-      if (pagina !== pag) return;
-      q('rd-aviso').innerHTML = aviso(texto, 'erro');
-      botao.disabled = false;
-    };
-
-    // O tipo define como a área de atuação é validada: não pode mudar com área já cadastrada.
-    if (rede && dados.tipo !== rede.tipo) {
-      const { count, error } = await SIPRO.db.from('redes_areas_atuacao').select('id', { count: 'exact', head: true }).eq('rede_id', rede.id);
-      if (pagina !== pag) return;
-      if (error) return falhar(mensagemDeErro(error));
-      if (count > 0) return falhar('Esta rede já tem área de atuação cadastrada. Remova a área antes de alterar o tipo.');
+    function mostrarErros(erros) {
+      chaves.forEach((k) => {
+        if (!q('f-' + k)) return;
+        q('f-' + k).classList.toggle('erro', !!erros[k]);
+        q('e-' + k).textContent = erros[k] || '';
+      });
+      const primeiro = chaves.find((k) => erros[k] && q('rd-' + k));
+      if (primeiro) q('rd-' + primeiro).focus();
     }
 
-    const consulta = rede
-      ? SIPRO.db.from('redes').update(dados).eq('id', rede.id)
-      : SIPRO.db.from('redes').insert(dados);
-    const { data, error } = await consulta.select('id');
+    async function salvar() {
+      const { erros, dados } = validar(lerForm());
+      q('rd-aviso').innerHTML = '';
+      mostrarErros(erros);
+      if (Object.keys(erros).length) return;
+      if (rede) delete dados.situacao; // a situação só muda em Configurações
+
+      const botao = q('rd-salvar');
+      botao.disabled = true;
+      const falhar = (texto) => {
+        if (!vivo()) return;
+        q('rd-aviso').innerHTML = aviso(texto, 'erro');
+        botao.disabled = false;
+      };
+
+      // O tipo define como a área de atuação é validada: não pode mudar com área já cadastrada.
+      if (rede && dados.tipo !== rede.tipo) {
+        const { count, error } = await SIPRO.db.from('redes_areas_atuacao').select('id', { count: 'exact', head: true }).eq('rede_id', rede.id);
+        if (!vivo()) return;
+        if (error) return falhar(mensagemDeErro(error));
+        if (count > 0) return falhar('Esta rede já tem área de atuação cadastrada. Remova a área antes de alterar o tipo.');
+      }
+
+      const consulta = rede
+        ? SIPRO.db.from('redes').update(dados).eq('id', rede.id)
+        : SIPRO.db.from('redes').insert(dados);
+      const { data, error } = await consulta.select(COLUNAS);
+      if (!vivo()) return;
+      if (error) return falhar(mensagemDeErro(error));
+      if (!data || !data.length) return falhar('Nenhuma alteração foi salva. Verifique sua permissão e tente novamente.');
+      aoSalvar(data[0]);
+    }
+  }
+
+  /* ---------- Módulo: listagem de redes ---------- */
+  let pagina = null; // elemento da tela atual; null quando a tela foi fechada
+  let redes = [];
+
+  const q = (id) => pagina.querySelector('#' + id);
+  const cabecalho = (comBotao) => `
+    <div class="pagina__cab">
+      <div><h2>Gestão da Rede</h2><p>Selecione uma rede para abrir o ambiente administrativo dela.</p></div>
+      ${comBotao ? '<button type="button" class="btn btn--sec" id="rede-nova">Nova rede</button>' : ''}
+    </div>`;
+
+  async function carregar() {
+    const pag = pagina;
+    const { data, error } = await SIPRO.db.from('redes').select(COLUNAS).order('nome');
     if (pagina !== pag) return;
-    if (error) return falhar(mensagemDeErro(error));
-    if (!data || !data.length) return falhar('Nenhuma alteração foi salva. Verifique sua permissão e tente novamente.');
-    if (!rede) SIPRO.estado.redeId = data[0].id;
-    await carregar(rede ? 'Rede atualizada.' : 'Rede cadastrada.');
+    if (error) {
+      pag.innerHTML = cabecalho(false) + aviso('Não foi possível carregar as redes.', 'erro') +
+        '<div><button type="button" class="btn btn--sec" id="rede-retentar">Tentar novamente</button></div>';
+      q('rede-retentar').addEventListener('click', () => carregar());
+      return;
+    }
+    redes = data || [];
+    desenharLista();
+  }
+
+  function desenharLista() {
+    const itens = redes.map((r) => `
+      <li>
+        <a class="rede-item rede-item--link" href="#/rede/${esc(r.id)}/visao-geral" aria-label="Abrir ${esc(r.nome)}">
+          <div>
+            <p class="rede-item__nome">${esc(r.nome)}</p>
+            <p class="rede-item__meta">${esc(rotulo(TIPOS, r.tipo))}${r.cnpj ? ' · CNPJ ' + esc(mascaraCnpj(r.cnpj)) : ''}</p>
+          </div>
+          <div class="rede-item__acoes">
+            <span class="badge badge--${esc(r.situacao)}">${esc(rotulo(SITUACOES, r.situacao))}</span>
+          </div>
+        </a>
+      </li>`).join('');
+
+    pagina.innerHTML = cabecalho(true) + (redes.length
+      ? `<ul class="rede-lista">${itens}</ul>`
+      : `<section class="bloco-vazio"><h3>Nenhuma rede cadastrada</h3><p>Use "Nova rede" para cadastrar a primeira rede de ensino.</p></section>`);
+
+    q('rede-nova').addEventListener('click', desenharNova);
+  }
+
+  function desenharNova() {
+    pagina.innerHTML = `
+      <div class="pagina__cab">
+        <div><h2>Nova rede</h2><p>Dados cadastrais da rede de ensino. Campos com * são obrigatórios.</p></div>
+      </div>
+      <div id="rede-novo-form"></div>`;
+    formularioRede(q('rede-novo-form'), {
+      rede: null,
+      aoSalvar: (nova) => { SIPRO.estado.redeId = nova.id; location.hash = `#/rede/${nova.id}/visao-geral`; },
+      aoCancelar: desenharLista,
+    });
   }
 
   SIPRO.modulos.rede = {
     async render(el) {
-      el.innerHTML = '<div class="pagina" id="rede-pagina"><p class="carregando-modulo" role="status">Carregando...</p></div>';
+      el.innerHTML = `<div class="pagina" id="rede-pagina">${SIPRO.ui.carregando()}</div>`;
       const pag = (pagina = el.querySelector('#rede-pagina'));
       try {
         const { data, error } = await SIPRO.db.rpc('eh_admin');
@@ -235,5 +249,84 @@
       }
     },
     destruir() { pagina = null; redes = []; },
+  };
+
+  /* ---------- Seção: Dados da Rede ---------- */
+  function desenharDados(el, amb, msg) {
+    const r = amb.rede;
+    const linhas = [
+      ['Nome da rede', r.nome],
+      ['Nome institucional', r.nome_institucional],
+      ['Tipo', rotulo(TIPOS, r.tipo)],
+      ['CNPJ', r.cnpj ? mascaraCnpj(r.cnpj) : ''],
+      ['Telefone institucional', r.telefone_institucional ? mascaraTelefone(r.telefone_institucional) : ''],
+      ['E-mail institucional', r.email_institucional],
+    ];
+    el.innerHTML = aviso(msg, 'info') + `
+      <section class="painel">
+        <dl class="dados">${linhas.map(([k, v]) =>
+          `<div class="dados__item"><dt>${esc(k)}</dt><dd>${v ? esc(v) : '<span class="dados__vazio">Não informado</span>'}</dd></div>`).join('')}</dl>
+        <div class="form-acoes"><button type="button" class="btn btn--sec" id="rd-editar">Editar dados</button></div>
+      </section>`;
+    el.querySelector('#rd-editar').addEventListener('click', () => {
+      el.innerHTML = '<div id="rd-edicao"></div>';
+      formularioRede(el.querySelector('#rd-edicao'), {
+        rede: amb.rede,
+        aoSalvar: (nova) => { amb.aoSalvar(nova); desenharDados(el, amb, 'Dados atualizados.'); },
+        aoCancelar: () => desenharDados(el, amb),
+      });
+    });
+  }
+
+  SIPRO.modulos['rede-dados'] = {
+    render(el, amb) { desenharDados(el, amb); },
+  };
+
+  /* ---------- Seção: Configurações ---------- */
+  function desenharConfig(el, amb, msg, tipo) {
+    const r = amb.rede;
+    el.innerHTML = aviso(msg, tipo) + `
+      <form class="painel" id="cf-form" novalidate>
+        <h3>Situação da rede</h3>
+        <p class="dica">Define se a rede está em operação. Os cadastros e o histórico são preservados.</p>
+        <div id="cf-aviso"></div>
+        <div class="form-grid">
+          <div class="field" id="cf-campo"><label for="cf-situacao">Situação</label><select id="cf-situacao">${opcoes(SITUACOES, r.situacao)}</select><p class="field__erro" id="cf-erro"></p></div>
+        </div>
+        <div class="form-acoes"><button type="submit" class="btn" id="cf-salvar">Salvar situação</button></div>
+      </form>
+      <section class="bloco-vazio"><h3>Outras configurações administrativas</h3><p>Em desenvolvimento.</p></section>`;
+
+    const q2 = (id) => el.querySelector('#' + id);
+    q2('cf-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nova = q2('cf-situacao').value;
+      q2('cf-aviso').innerHTML = '';
+      q2('cf-campo').classList.remove('erro');
+      q2('cf-erro').textContent = '';
+      if (!SITUACOES.some((s) => s[0] === nova)) {
+        q2('cf-campo').classList.add('erro');
+        q2('cf-erro').textContent = 'Selecione a situação.';
+        return;
+      }
+      if (nova === r.situacao) { q2('cf-aviso').innerHTML = aviso('A rede já está nesta situação.', 'info'); return; }
+      if (nova !== 'ativa' && !window.confirm(`Alterar a situação desta rede para "${rotulo(SITUACOES, nova)}"? Os cadastros e o histórico são preservados.`)) return;
+
+      const botao = q2('cf-salvar');
+      botao.disabled = true;
+      const { data, error } = await SIPRO.db.from('redes').update({ situacao: nova }).eq('id', r.id).select(COLUNAS);
+      if (!el.isConnected) return;
+      if (error || !data || !data.length) {
+        q2('cf-aviso').innerHTML = aviso(error ? mensagemDeErro(error) : 'Nenhuma alteração foi salva. Verifique sua permissão e tente novamente.', 'erro');
+        botao.disabled = false;
+        return;
+      }
+      amb.aoSalvar(data[0]);
+      desenharConfig(el, amb, 'Situação atualizada.', 'info');
+    });
+  }
+
+  SIPRO.modulos['rede-config'] = {
+    render(el, amb) { desenharConfig(el, amb); },
   };
 })();

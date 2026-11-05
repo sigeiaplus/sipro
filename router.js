@@ -12,7 +12,8 @@
       icone: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>' },
     { id: 'rede', rotulo: 'Gestão da Rede', arquivo: 'rede.js',
       icone: '<circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M12 7.5v4M12 11.5l-5.5 5.5M12 11.5l5.5 5.5"/>' },
-    { id: 'rede-area', rotulo: 'Área de Atuação', arquivo: 'rede-area.js', pai: 'rede', oculta: true, icone: '' }, // subtela: fora do menu
+    // Ambiente da rede: acessado por #/rede/<id>/<seção>, nunca por #/rede-ambiente
+    { id: 'rede-ambiente', rotulo: 'Gestão da Rede', arquivo: 'rede-ambiente.js', pai: 'rede', oculta: true, aninhada: true, icone: '' },
     { id: 'unidades', rotulo: 'Unidades Escolares', arquivo: 'unidades.js',
       icone: '<path d="M3 21h18M5 21V9l7-5 7 5v12M10 21v-6h4v6"/>' },
     { id: 'usuarios', rotulo: 'Usuários', arquivo: 'usuarios.js',
@@ -27,10 +28,23 @@
   let sequencia = 0;
 
   const conteudo = () => document.getElementById('conteudo');
-  const rotaDoHash = () => {
-    const id = location.hash.replace(/^#\//, '');
-    return ROTAS.find((r) => r.id === id) || ROTAS[0];
-  };
+  const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  /** Lê o hash. Formatos: #/<rota> e #/rede/<id da rede>[/<seção>].
+      Retorna { rota, params } ou null quando o hash não é válido. */
+  function analisarHash() {
+    const partes = location.hash.replace(/^#\//, '').split('/').filter(Boolean);
+    if (partes[0] === 'rede' && partes.length >= 2) {
+      if (partes.length > 3 || !UUID.test(partes[1])) return null;
+      return {
+        rota: ROTAS.find((r) => r.id === 'rede-ambiente'),
+        params: { redeId: partes[1].toLowerCase(), secao: partes[2] || 'visao-geral' },
+      };
+    }
+    if (partes.length !== 1) return null;
+    const rota = ROTAS.find((r) => r.id === partes[0] && !r.aninhada);
+    return rota ? { rota, params: {} } : null;
+  }
 
   function desenharMenu() {
     document.getElementById('menu').innerHTML = ROTAS.filter((r) => !r.oculta).map((r) =>
@@ -38,20 +52,27 @@
     ).join('');
   }
 
-  function carregar(rota) {
-    if (SIPRO.modulos[rota.id]) return Promise.resolve(SIPRO.modulos[rota.id]);
-    return new Promise((ok, falha) => {
+  /** Carrega, sob demanda, o arquivo que registra o módulo `chave`.
+      Usado pelo roteador e pelas seções internas da rede. */
+  const emCarga = {};
+  function carregarModulo(chave, arquivo) {
+    if (SIPRO.modulos[chave]) return Promise.resolve(SIPRO.modulos[chave]);
+    if (emCarga[arquivo]) return emCarga[arquivo].then(() => (SIPRO.modulos[chave] || Promise.reject(new Error('módulo não registrado'))));
+    emCarga[arquivo] = new Promise((ok, falha) => {
       const s = document.createElement('script');
-      s.src = rota.arquivo;
-      s.onload = () => (SIPRO.modulos[rota.id] ? ok(SIPRO.modulos[rota.id]) : falha(new Error('módulo não registrado')));
+      s.src = arquivo;
+      s.onload = () => ok();
       s.onerror = () => { s.remove(); falha(new Error('arquivo não carregou')); };
       document.head.appendChild(s);
     });
+    emCarga[arquivo].catch(() => { delete emCarga[arquivo]; });
+    return emCarga[arquivo].then(() => (SIPRO.modulos[chave] || Promise.reject(new Error('módulo não registrado'))));
   }
 
   async function navegar() {
     if (!ativo) return;
-    const rota = rotaDoHash();
+    const alvo = analisarHash() || { rota: ROTAS[0], params: {} };
+    const rota = alvo.rota;
     const minha = ++sequencia;
 
     document.querySelectorAll('#menu .menu__item').forEach((a) => {
@@ -62,17 +83,20 @@
     document.title = `${rota.rotulo} | SIPRO+`;
     if (SIPRO.ui) SIPRO.ui.fecharMenu();
 
+    // Mesmo módulo e só mudou a seção/parâmetro: o módulo atualiza sem recarregar tudo.
+    if (moduloAtual && moduloAtual === SIPRO.modulos[rota.id] && moduloAtual.atualizar && moduloAtual.atualizar(alvo.params)) return;
+
     const el = conteudo();
     if (moduloAtual && moduloAtual.destruir) moduloAtual.destruir();
     moduloAtual = null;
     el.innerHTML = '<p class="carregando-modulo" role="status">Carregando...</p>';
 
     try {
-      const modulo = await carregar(rota);
+      const modulo = await carregarModulo(rota.id, rota.arquivo);
       if (minha !== sequencia || !ativo) return;
       moduloAtual = modulo;
       el.innerHTML = '';
-      modulo.render(el, contexto);
+      modulo.render(el, { ...contexto, params: alvo.params });
       window.scrollTo(0, 0);
     } catch (_) {
       if (minha !== sequencia) return;
@@ -87,7 +111,7 @@
     contexto = ctx;
     ativo = true;
     desenharMenu();
-    if (!ROTAS.some((r) => `#/${r.id}` === location.hash))
+    if (!analisarHash())
       history.replaceState(null, '', `${location.pathname}${location.search}#/${ROTAS[0].id}`);
     navegar();
   }
@@ -102,5 +126,5 @@
     document.title = 'Entrar | SIPRO+';
   }
 
-  SIPRO.router = { ROTAS, ativar, desativar };
+  SIPRO.router = { ROTAS, ativar, desativar, carregarModulo };
 })();
