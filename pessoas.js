@@ -1,4 +1,4 @@
-/* SIPRO+ — Pessoas (cadastro central de Pessoa Física e Pessoa Jurídica)
+/* SIREDE+ — Pessoas (cadastro central de Pessoa Física e Pessoa Jurídica)
    Base reutilizável: Usuários, Responsáveis, Profissionais, Alunos e outras entidades apontam para public.pessoas.
    Pessoa e Usuário são coisas diferentes: usuarios = conta de acesso (Supabase Auth); pessoas = cadastro da pessoa.
    Uma pessoa não precisa ter conta.
@@ -7,14 +7,14 @@
    à pessoa por tabelas de vínculo (ex.: redes_responsaveis). Quem decide o acesso é o RLS (só administrador);
    o frontend só esconde a tela. Pessoa nunca é apagada: a situação é alterada para Inativa.
 
-   Uso por outros módulos (carregar com SIPRO.router.carregarModulo('pessoas', 'pessoas.js')):
-     SIPRO.pessoas.buscar(termo, { tipo, situacao, limite }) -> { dados } | { erro }
-     SIPRO.pessoas.nomeDe(p) / SIPRO.pessoas.documentoDe(p) */
+   Uso por outros módulos (carregar com SIREDE.router.carregarModulo('pessoas', 'pessoas.js')):
+     SIREDE.pessoas.buscar(termo, { tipo, situacao, limite }) -> { dados } | { erro }
+     SIREDE.pessoas.nomeDe(p) / SIREDE.pessoas.documentoDe(p) */
 (() => {
   'use strict';
-  const SIPRO = window.SIPRO;
-  const esc = SIPRO.ui.escapar;
-  const U = SIPRO.util;
+  const SIREDE = window.SIREDE;
+  const esc = SIREDE.ui.escapar;
+  const U = SIREDE.util;
 
   const TIPOS = [['fisica', 'Pessoa Física'], ['juridica', 'Pessoa Jurídica']];
   const SIGLA = { fisica: 'PF', juridica: 'PJ' };
@@ -63,7 +63,7 @@
   const limparBusca = (t) => String(t || '').replace(/[%,()*\\"_]/g, ' ').replace(/\s+/g, ' ').trim();
 
   function consultaPessoas(colunas, f, opcoes) {
-    let c = SIPRO.db.from('pessoas').select(colunas, opcoes);
+    let c = SIREDE.db.from('pessoas').select(colunas, opcoes);
     if (f.tipo) c = c.eq('tipo', f.tipo);
     if (f.situacao) c = c.eq('situacao', f.situacao);
     const t = limparBusca(f.busca);
@@ -83,7 +83,7 @@
 
   /** Cadastro completo de uma pessoa pelo id (para Usuários, Responsáveis, Profissionais, Alunos). */
   async function obter(id) {
-    const { data, error } = await SIPRO.db.from('pessoas').select(COLUNAS).eq('id', id).maybeSingle();
+    const { data, error } = await SIREDE.db.from('pessoas').select(COLUNAS).eq('id', id).maybeSingle();
     return error ? { erro: mensagemDeErro(error) } : { dados: data || null };
   }
 
@@ -91,11 +91,11 @@
   async function porDocumento(tipo, documento) {
     const d = U.soDigitos(documento);
     if (!d) return { dados: null };
-    const { data, error } = await SIPRO.db.from('pessoas').select(COLUNAS_LISTA).eq(tipo === 'juridica' ? 'cnpj' : 'cpf', d).maybeSingle();
+    const { data, error } = await SIREDE.db.from('pessoas').select(COLUNAS_LISTA).eq(tipo === 'juridica' ? 'cnpj' : 'cpf', d).maybeSingle();
     return error ? { erro: mensagemDeErro(error) } : { dados: data || null };
   }
 
-  SIPRO.pessoas = { TIPOS, SITUACOES, COLUNAS, nomeDe, documentoDe, buscar, obter, porDocumento };
+  SIREDE.pessoas = { TIPOS, SITUACOES, COLUNAS, nomeDe, documentoDe, buscar, obter, porDocumento };
 
   /* ---------- Estado da tela ---------- */
   let pagina = null;         // elemento da tela atual; null quando a tela foi fechada
@@ -149,7 +149,7 @@
     const pg = pagina;
     const minha = ++seq;
     const res = q('pe-resultado');
-    if (inicial) res.innerHTML = SIPRO.ui.carregando('Carregando pessoas...');
+    if (inicial) res.innerHTML = SIREDE.ui.carregando('Carregando pessoas...');
     else res.setAttribute('aria-busy', 'true');
 
     const de = indicePagina * POR_PAGINA;
@@ -216,8 +216,8 @@
   /* ---------- Visualização ---------- */
   async function abrirPessoa(id, msg, tipoMsg) {
     const pg = pagina;
-    pagina.innerHTML = SIPRO.ui.carregando('Carregando cadastro...');
-    const { data, error } = await SIPRO.db.from('pessoas').select(COLUNAS).eq('id', id).maybeSingle();
+    pagina.innerHTML = SIREDE.ui.carregando('Carregando cadastro...');
+    const { data, error } = await SIREDE.db.from('pessoas').select(COLUNAS).eq('id', id).maybeSingle();
     if (pagina !== pg) return;
     if (error) {
       pagina.innerHTML = aviso(mensagemDeErro(error), 'erro') +
@@ -239,12 +239,12 @@
     let vinculos = null;
     try {
       if (p.municipio_codigo) {
-        const r = await SIPRO.db.from('municipios').select('nome, uf').eq('codigo_ibge', p.municipio_codigo).maybeSingle();
+        const r = await SIREDE.db.from('municipios').select('nome, uf').eq('codigo_ibge', p.municipio_codigo).maybeSingle();
         if (!r.error && r.data) municipio = r.data;
       }
     } catch (_) { /* o endereço aparece sem o nome do município */ }
     try {
-      const r = await SIPRO.db.from('redes_responsaveis').select('*', { count: 'exact', head: true }).eq('pessoa_id', p.id);
+      const r = await SIREDE.db.from('redes_responsaveis').select('*', { count: 'exact', head: true }).eq('pessoa_id', p.id);
       if (!r.error) vinculos = r.count;
     } catch (_) { /* vínculos desconhecidos: não afirma nada */ }
     return { municipio, vinculos };
@@ -308,7 +308,7 @@
     if (nova === 'inativa' && !window.confirm(`Inativar "${nomeDe(p)}"? O cadastro, os vínculos e o histórico são preservados.`)) return;
     q('pe-situacao').disabled = true;
     q('pe-editar').disabled = true;
-    const { data, error } = await SIPRO.db.from('pessoas').update({ situacao: nova }).eq('id', p.id).select(COLUNAS);
+    const { data, error } = await SIREDE.db.from('pessoas').update({ situacao: nova }).eq('id', p.id).select(COLUNAS);
     if (pagina !== pg) return;
     if (error || !data || !data.length) return mostrarPessoa(p, error ? mensagemDeErro(error) : SEM_EFEITO, 'erro');
     return mostrarPessoa(data[0], nova === 'ativa' ? 'Cadastro reativado.' : 'Cadastro inativado.', 'info');
@@ -323,8 +323,8 @@
   async function desenharForm(p) {
     const pg = pagina;
     if (!estados.length) {
-      pagina.innerHTML = SIPRO.ui.carregando('Preparando formulário...');
-      const { data, error } = await SIPRO.db.from('estados').select('uf, nome').order('nome');
+      pagina.innerHTML = SIREDE.ui.carregando('Preparando formulário...');
+      const { data, error } = await SIREDE.db.from('estados').select('uf, nome').order('nome');
       if (pagina !== pg) return;
       if (error) {
         pagina.innerHTML = aviso('Não foi possível carregar os dados do formulário.', 'erro') +
@@ -418,7 +418,7 @@
 
   async function ufDoMunicipio(codigo) {
     try {
-      const r = await SIPRO.db.from('municipios').select('uf').eq('codigo_ibge', codigo).maybeSingle();
+      const r = await SIREDE.db.from('municipios').select('uf').eq('codigo_ibge', codigo).maybeSingle();
       return !r.error && r.data ? r.data.uf : '';
     } catch (_) { return ''; }
   }
@@ -430,7 +430,7 @@
     sel.disabled = true;
     sel.innerHTML = '<option value="">Carregando...</option>';
     if (!cacheMunicipios[uf]) {
-      const { data, error } = await SIPRO.db.from('municipios').select('codigo_ibge, nome').eq('uf', uf).order('nome');
+      const { data, error } = await SIREDE.db.from('municipios').select('codigo_ibge, nome').eq('uf', uf).order('nome');
       if (pagina !== pg || !q('pe-uf') || q('pe-uf').value !== uf) return;
       if (error) { sel.innerHTML = '<option value="">Não foi possível carregar</option>'; return; }
       cacheMunicipios[uf] = data || [];
@@ -567,7 +567,7 @@
     // Duplicidade: confere antes de gravar (mensagem clara e atalho para o cadastro existente).
     // A garantia final é o índice único do banco; este passo só evita a ida e volta com erro.
     const colDoc = tipo === 'juridica' ? 'cnpj' : 'cpf';
-    const dup = await SIPRO.db.from('pessoas').select('id').eq(colDoc, dados[colDoc]).maybeSingle();
+    const dup = await SIREDE.db.from('pessoas').select('id').eq(colDoc, dados[colDoc]).maybeSingle();
     if (pagina !== pg) return;
     if (!dup.error && dup.data && (!p || dup.data.id !== p.id)) {
       const err = { code: '23505', message: colDoc };
@@ -577,8 +577,8 @@
     }
 
     const consulta = p
-      ? SIPRO.db.from('pessoas').update(dados).eq('id', p.id)           // tipo e situação não mudam aqui
-      : SIPRO.db.from('pessoas').insert({ ...dados, tipo, situacao: q('pe-situacao').value });
+      ? SIREDE.db.from('pessoas').update(dados).eq('id', p.id)           // tipo e situação não mudam aqui
+      : SIREDE.db.from('pessoas').insert({ ...dados, tipo, situacao: q('pe-situacao').value });
     const { data, error } = await consulta.select(COLUNAS);
     if (pagina !== pg) return;
 
@@ -594,7 +594,7 @@
   /** CPF/CNPJ duplicado: mostra um atalho para abrir o cadastro que já existe. */
   async function oferecerExistente(error, dados, p, pg) {
     const col = /cnpj/i.test(String(error.message || '')) ? 'cnpj' : 'cpf';
-    const r = await SIPRO.db.from('pessoas').select('id').eq(col, dados[col]).maybeSingle();
+    const r = await SIREDE.db.from('pessoas').select('id').eq(col, dados[col]).maybeSingle();
     if (pagina !== pg || !q('pe-aviso') || r.error || !r.data || (p && r.data.id === p.id)) return;
     q('pe-aviso').insertAdjacentHTML('beforeend', '<div class="aviso__acao"><button type="button" class="btn btn--sec" id="pe-abrir-existente">Abrir cadastro existente</button></div>');
     q('pe-abrir-existente').addEventListener('click', () => abrirPessoa(r.data.id));
@@ -610,15 +610,15 @@
     cepAtual = '';
   }
 
-  SIPRO.modulos.pessoas = {
+  SIREDE.modulos.pessoas = {
     async render(el) {
       limpar();
       filtro = { busca: '', tipo: '', situacao: '' };
       indicePagina = 0;
-      el.innerHTML = `<div class="pagina" id="pe-pagina">${SIPRO.ui.carregando()}</div>`;
+      el.innerHTML = `<div class="pagina" id="pe-pagina">${SIREDE.ui.carregando()}</div>`;
       const pg = (pagina = el.querySelector('#pe-pagina'));
       try {
-        const { data, error } = await SIPRO.db.rpc('eh_admin');
+        const { data, error } = await SIREDE.db.rpc('eh_admin');
         if (pagina !== pg) return;
         if (error) { pg.innerHTML = aviso('Não foi possível verificar seu acesso. Recarregue a página.', 'erro'); return; }
         if (data !== true) {

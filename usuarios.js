@@ -1,11 +1,11 @@
-/* SIPRO+ — Usuários (tela estrutural) */
+/* SIREDE+ — Usuários (tela estrutural) */
 (() => {
   'use strict';
-  const SIPRO = window.SIPRO;
+  const SIREDE = window.SIREDE;
 
-  SIPRO.modulos.usuarios = {
+  SIREDE.modulos.usuarios = {
     render(el) {
-      el.innerHTML = SIPRO.ui.telaEstrutural({
+      el.innerHTML = SIREDE.ui.telaEstrutural({
         titulo: 'Usuários',
         descricao: 'Gestão de acessos e perfis de usuários.',
         secoes: ['Lista de usuários', 'Perfis e permissões'],

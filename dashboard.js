@@ -1,8 +1,8 @@
 /* SIREDE+ — Dashboard principal */
 (() => {
   'use strict';
-  const SIPRO = window.SIPRO;
-  const esc = SIPRO.ui.escapar;
+  const SIREDE = window.SIREDE;
+  const esc = SIREDE.ui.escapar;
 
   function saudacao() {
     const h = new Date().getHours();
@@ -13,7 +13,7 @@
     return t.charAt(0).toUpperCase() + t.slice(1);
   }
 
-  SIPRO.modulos.dashboard = {
+  SIREDE.modulos.dashboard = {
     render(el, ctx) {
       const u = ctx.usuario;
       const primeiroNome = u.nome.split(/\s+/)[0];

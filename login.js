@@ -1,7 +1,7 @@
 /* SIREDE+ — Tela de login (interface). A autenticação fica em auth.js. */
 (() => {
   'use strict';
-  const SIPRO = (window.SIPRO = window.SIPRO || { modulos: {} });
+  const SIREDE = (window.SIREDE = window.SIREDE || { modulos: {} });
 
   const form = document.getElementById('form-login');
   const cpf = document.getElementById('cpf');
@@ -81,7 +81,7 @@
     if (primeiro) { primeiro.focus(); return; }
 
     carregando(true);
-    const r = await SIPRO.auth.entrar(digitos, senha.value);
+    const r = await SIREDE.auth.entrar(digitos, senha.value);
     carregando(false);
 
     if (r.erro) { mostrarAviso(r.erro, 'erro'); senha.focus(); return; }
@@ -90,7 +90,7 @@
   });
 
   /** Chamado pelo app.js ao voltar para o login (ex.: após sair). */
-  SIPRO.login = {
+  SIREDE.login = {
     resetar() {
       form.reset();
       ocultarSenha();

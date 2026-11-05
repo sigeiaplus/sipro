@@ -1,11 +1,11 @@
-/* SIPRO+ — Configurações (tela estrutural) */
+/* SIREDE+ — Configurações (tela estrutural) */
 (() => {
   'use strict';
-  const SIPRO = window.SIPRO;
+  const SIREDE = window.SIREDE;
 
-  SIPRO.modulos.configuracoes = {
+  SIREDE.modulos.configuracoes = {
     render(el) {
-      el.innerHTML = SIPRO.ui.telaEstrutural({
+      el.innerHTML = SIREDE.ui.telaEstrutural({
         titulo: 'Configurações',
         descricao: 'Preferências gerais do sistema.',
         secoes: ['Dados da instituição', 'Preferências'],

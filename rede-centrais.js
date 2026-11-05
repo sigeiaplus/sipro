@@ -1,4 +1,4 @@
-/* SIPRO+ — Ambiente da rede › Centrais Administrativas (seção)
+/* SIREDE+ — Ambiente da rede › Centrais Administrativas (seção)
    Lista, cadastra e edita as centrais da rede aberta (public.redes_centrais).
    Estrutura confirmada no banco: várias centrais por rede; no máximo uma principal
    (índice único parcial redes_centrais_principal_uk); município obrigatório; CEP com 8 dígitos;
@@ -6,8 +6,8 @@
    Toda operação usa o rede_id da rede aberta (amb.rede); nunca se opera por id isolado. */
 (() => {
   'use strict';
-  const SIPRO = window.SIPRO;
-  const esc = SIPRO.ui.escapar;
+  const SIREDE = window.SIREDE;
+  const esc = SIREDE.ui.escapar;
 
   const COLUNAS = 'id, rede_id, nome, tipo, cep, logradouro, numero, complemento, bairro, municipio_codigo, principal';
 
@@ -73,13 +73,13 @@
 
   async function carregar(msg, tipoMsg) {
     const pag = pagina;
-    const { data, error } = await SIPRO.db.from('redes_centrais').select(COLUNAS).eq('rede_id', rede.id);
+    const { data, error } = await SIREDE.db.from('redes_centrais').select(COLUNAS).eq('rede_id', rede.id);
     if (pagina !== pag) return;
     if (error) return desenharErro('Não foi possível carregar as centrais.');
     const codigos = [...new Set((data || []).map((c) => c.municipio_codigo))];
     locais = {};
     if (codigos.length) {
-      const r = await SIPRO.db.from('municipios').select('codigo_ibge, nome, uf').in('codigo_ibge', codigos);
+      const r = await SIREDE.db.from('municipios').select('codigo_ibge, nome, uf').in('codigo_ibge', codigos);
       if (pagina !== pag) return;
       if (r.error) return desenharErro('Não foi possível carregar as centrais.');
       (r.data || []).forEach((m) => { locais[m.codigo_ibge] = { nome: m.nome, uf: m.uf }; });
@@ -90,7 +90,7 @@
 
   async function iniciar() {
     const pag = pagina;
-    const { data, error } = await SIPRO.db.from('estados').select('uf, nome').order('nome');
+    const { data, error } = await SIREDE.db.from('estados').select('uf, nome').order('nome');
     if (pagina !== pag) return;
     if (error) return desenharErro('Não foi possível carregar os dados.');
     estados = data || [];
@@ -181,7 +181,7 @@
     sel.disabled = true;
     sel.innerHTML = '<option value="">Carregando...</option>';
     if (!cacheMunicipios[uf]) {
-      const { data, error } = await SIPRO.db.from('municipios').select('codigo_ibge, nome').eq('uf', uf).order('nome');
+      const { data, error } = await SIREDE.db.from('municipios').select('codigo_ibge, nome').eq('uf', uf).order('nome');
       if (pagina !== pag || !q('ce-uf') || q('ce-uf').value !== uf) return;
       if (error) { sel.innerHTML = '<option value="">Não foi possível carregar</option>'; return; }
       cacheMunicipios[uf] = data || [];
@@ -266,7 +266,7 @@
     };
 
     if (central) { // edição: nunca altera rede_id nem principal
-      const { data, error } = await SIPRO.db.from('redes_centrais').update(dados).eq('id', central.id).eq('rede_id', rede.id).select('id');
+      const { data, error } = await SIREDE.db.from('redes_centrais').update(dados).eq('id', central.id).eq('rede_id', rede.id).select('id');
       if (pagina !== pag) return;
       if (error) return falhar(mensagemDeErro(error));
       if (!data || !data.length) return falhar(falhaSemEfeito);
@@ -276,7 +276,7 @@
     const quer = q('ce-principal').checked;
     const atual = centrais.find((x) => x.principal);
     const direto = quer && !atual; // sem principal hoje: grava já como principal (uma única operação)
-    const { data, error } = await SIPRO.db.from('redes_centrais').insert({ rede_id: rede.id, ...dados, principal: direto }).select('id');
+    const { data, error } = await SIREDE.db.from('redes_centrais').insert({ rede_id: rede.id, ...dados, principal: direto }).select('id');
     if (pagina !== pag) return;
     if (error) return falhar(mensagemDeErro(error));
     if (!data || !data.length) return falhar(falhaSemEfeito);
@@ -291,7 +291,7 @@
   /** Troca a principal mantendo a regra de uma só: primeiro libera a atual, depois marca a nova.
       Se a segunda etapa falhar, devolve a condição de principal à central anterior. */
   async function trocarPrincipal(novaId, atual) {
-    const alvo = (id, valor) => SIPRO.db.from('redes_centrais').update({ principal: valor }).eq('id', id).eq('rede_id', rede.id).select('id');
+    const alvo = (id, valor) => SIREDE.db.from('redes_centrais').update({ principal: valor }).eq('id', id).eq('rede_id', rede.id).select('id');
     if (atual) {
       const a = await alvo(atual.id, false);
       if (a.error) return { erro: mensagemDeErro(a.error) };
@@ -326,19 +326,19 @@
       return desenharLista('Defina outra central como principal antes de remover esta.', 'erro');
     }
     if (!window.confirm(`Remover a central "${c.nome}"? A alteração fica registrada no histórico da rede.`)) return;
-    const { data, error } = await SIPRO.db.from('redes_centrais').delete().eq('id', id).eq('rede_id', rede.id).select('id');
+    const { data, error } = await SIREDE.db.from('redes_centrais').delete().eq('id', id).eq('rede_id', rede.id).select('id');
     if (pagina !== pag) return;
     if (error) return desenharLista(mensagemDeErro(error), 'erro');
     if (!data || !data.length) return desenharLista(falhaSemEfeito, 'erro');
     await carregar('Central removida.', 'info');
   }
 
-  SIPRO.modulos['rede-centrais'] = {
+  SIREDE.modulos['rede-centrais'] = {
     async render(el, amb) {
       pagina = el;
       rede = amb.rede;
       estados = []; centrais = []; locais = {}; cacheMunicipios = {};
-      el.innerHTML = SIPRO.ui.carregando();
+      el.innerHTML = SIREDE.ui.carregando();
       try {
         await iniciar();
       } catch (_) {

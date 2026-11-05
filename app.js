@@ -1,9 +1,9 @@
 /* SIREDE+ — Inicialização geral: troca entre login e ambiente administrativo,
-   cabeçalho, menu móvel, logout e utilitários compartilhados (SIPRO.ui).
+   cabeçalho, menu móvel, logout e utilitários compartilhados (SIREDE.ui).
    O código de cada tela fica no arquivo do seu módulo. */
 (() => {
   'use strict';
-  const SIPRO = (window.SIPRO = window.SIPRO || { modulos: {} });
+  const SIREDE = (window.SIREDE = window.SIREDE || { modulos: {} });
   const $ = (id) => document.getElementById(id);
 
   /* Campos personalizados (caixa suspensa, data e hora): campos.js é carregado aqui, ao lado deste arquivo,
@@ -20,7 +20,7 @@
   const escapar = (t) => String(t).replace(/[&<>"']/g, (c) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-  /** Loader padrão (anel laranja girando). Use SIPRO.ui.carregando() em qualquer tela que esteja buscando dados. */
+  /** Loader padrão (anel laranja girando). Use SIREDE.ui.carregando() em qualquer tela que esteja buscando dados. */
   const carregando = (titulo = 'Carregando informações...', texto = 'Aguarde um momento enquanto o sistema processa os dados.') => `
     <div class="carregando" role="status" aria-live="polite">
       <span class="carregando__anel" aria-hidden="true">
@@ -60,7 +60,7 @@
     $('btn-menu').setAttribute('aria-expanded', 'true');
   }
 
-  /* ---------- Máscaras e validações compartilhadas (SIPRO.util) ----------
+  /* ---------- Máscaras e validações compartilhadas (SIREDE.util) ----------
      Usadas pelo cadastro de Pessoas e por futuros módulos. O banco valida CPF/CNPJ de novo (nunca só o frontend). */
   const soDigitos = (t) => String(t || '').replace(/\D/g, '');
 
@@ -115,9 +115,9 @@
   }
   const emailValido = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
 
-  SIPRO.util = { soDigitos, mascaraCpf, mascaraCnpj, mascaraTelefone, mascaraCep, cpfValido, cnpjValido, emailValido };
-  SIPRO.ui = { escapar, telaEstrutural, fecharMenu, carregando };
-  SIPRO.estado = { redeId: null }; // rede selecionada (ID no banco), compartilhada entre as seções do ambiente da rede
+  SIREDE.util = { soDigitos, mascaraCpf, mascaraCnpj, mascaraTelefone, mascaraCep, cpfValido, cnpjValido, emailValido };
+  SIREDE.ui = { escapar, telaEstrutural, fecharMenu, carregando };
+  SIREDE.estado = { redeId: null }; // rede selecionada (ID no banco), compartilhada entre as seções do ambiente da rede
 
   /* ---------- Troca de telas ---------- */
   let usuarioAtual = null;
@@ -134,7 +134,7 @@
     const id = sessao.user.id;
     if ((usuarioAtual && usuarioAtual.id === id) || carregandoId === id) return; // renovação de sessão ou busca em andamento
     carregandoId = id;
-    const cadastro = await SIPRO.auth.cadastro(); // nome vem de public.usuarios
+    const cadastro = await SIREDE.auth.cadastro(); // nome vem de public.usuarios
     if (carregandoId !== id) return; // saiu enquanto carregava
     carregandoId = null;
 
@@ -146,16 +146,16 @@
       ? escapar(u.nome.charAt(0).toUpperCase())
       : '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.6-3.6 3.5-5.5 7-5.5s6.4 1.9 7 5.5"/></svg>';
     mostrar('app');
-    SIPRO.router.ativar({ usuario: u });
+    SIREDE.router.ativar({ usuario: u });
   }
 
   function irParaLogin() {
     usuarioAtual = null;
-    SIPRO.estado.redeId = null;
+    SIREDE.estado.redeId = null;
     carregandoId = null;
-    SIPRO.router.desativar();
+    SIREDE.router.desativar();
     fecharMenu();
-    SIPRO.login.resetar();
+    SIREDE.login.resetar();
     mostrar('login');
   }
 
@@ -166,15 +166,15 @@
 
   $('btn-sair').addEventListener('click', async (e) => {
     e.currentTarget.disabled = true;
-    await SIPRO.auth.sair(); // a mudança de sessão leva de volta ao login
+    await SIREDE.auth.sair(); // a mudança de sessão leva de volta ao login
     e.currentTarget.disabled = false;
   });
 
   /* ---------- Início ---------- */
   async function iniciar() {
-    if (!SIPRO.auth.disponivel()) { irParaLogin(); return; }
-    SIPRO.auth.aoMudar((_evento, sessao) => (sessao ? entrarNoApp(sessao) : irParaLogin()));
-    const sessao = await SIPRO.auth.sessao(); // recupera a sessão salva ao atualizar a página
+    if (!SIREDE.auth.disponivel()) { irParaLogin(); return; }
+    SIREDE.auth.aoMudar((_evento, sessao) => (sessao ? entrarNoApp(sessao) : irParaLogin()));
+    const sessao = await SIREDE.auth.sessao(); // recupera a sessão salva ao atualizar a página
     if (sessao) entrarNoApp(sessao); else irParaLogin();
   }
   iniciar();

@@ -1,14 +1,14 @@
 /* SIREDE+ — Autenticação e sessão (Supabase Auth)
-   Único lugar que cria o cliente do Supabase. Os demais arquivos usam SIPRO.auth.
+   Único lugar que cria o cliente do Supabase. Os demais arquivos usam SIREDE.auth.
    Só a chave PÚBLICA (publishable) pode ficar aqui; a segurança real vem do RLS. */
 (() => {
   'use strict';
 
   const SUPABASE_URL = 'https://jchulvfsrelekgtkgrxt.supabase.co';
   const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_rdnEh4GIQVHd0t0ZNgrzow_z5MdjcgY';
-  const CPF_DOMINIO = 'sipro.app'; // CPF vira o e-mail "<cpf>@sipro.app" no Supabase Auth
+  const CPF_DOMINIO = 'sirede.app'; // CPF vira o e-mail "<cpf>@sirede.app" no Supabase Auth
 
-  const SIPRO = (window.SIPRO = window.SIPRO || { modulos: {} });
+  const SIREDE = (window.SIREDE = window.SIREDE || { modulos: {} });
 
   const client = window.supabase
     ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
@@ -69,11 +69,11 @@
     return () => data.subscription.unsubscribe();
   }
 
-  SIPRO.auth = { disponivel: () => !!client, sessao, autenticado, entrar, sair, aoMudar, cadastro };
+  SIREDE.auth = { disponivel: () => !!client, sessao, autenticado, entrar, sair, aoMudar, cadastro };
 
   /** Acesso controlado ao banco para os módulos: apenas tabelas e funções (RPC).
       Não expõe auth nem o cliente em si; a segurança real vem do RLS. */
-  SIPRO.db = {
+  SIREDE.db = {
     from: (tabela) => client.from(tabela),
     rpc: (nome, args) => client.rpc(nome, args),
   };

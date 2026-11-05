@@ -1,4 +1,4 @@
-/* SIPRO+ — Gestão da Rede
+/* SIREDE+ — Gestão da Rede
    Registra três módulos:
    - rede         : listagem das redes; clicar em uma rede abre o ambiente dela (#/rede/<id>)
    - rede-dados   : seção Dados da Rede (consulta e edição dos dados cadastrais)
@@ -6,8 +6,8 @@
    A permissão real vem do RLS; o frontend só esconde telas de quem não é administrador. */
 (() => {
   'use strict';
-  const SIPRO = window.SIPRO;
-  const esc = SIPRO.ui.escapar;
+  const SIREDE = window.SIREDE;
+  const esc = SIREDE.ui.escapar;
 
   const TIPOS = [['estadual', 'Estadual'], ['municipal', 'Municipal'], ['federal', 'Federal'], ['privada', 'Privada'], ['outra', 'Outra']];
   const SITUACOES = [['ativa', 'Ativa'], ['inativa', 'Inativa'], ['suspensa', 'Suspensa']];
@@ -80,7 +80,7 @@
     return 'Não foi possível concluir agora. Tente novamente em instantes.';
   }
 
-  SIPRO.rede = { TIPOS, SITUACOES, COLUNAS, rotulo }; // compartilhado com o ambiente da rede
+  SIREDE.rede = { TIPOS, SITUACOES, COLUNAS, rotulo }; // compartilhado com o ambiente da rede
 
   const aviso = (texto, tipo) => (texto ? `<div class="aviso ${tipo}" role="${tipo === 'erro' ? 'alert' : 'status'}">${esc(texto)}</div>` : '');
   const opcoes = (lista, atual) =>
@@ -154,15 +154,15 @@
 
       // O tipo define como a área de atuação é validada: não pode mudar com área já cadastrada.
       if (rede && dados.tipo !== rede.tipo) {
-        const { count, error } = await SIPRO.db.from('redes_areas_atuacao').select('id', { count: 'exact', head: true }).eq('rede_id', rede.id);
+        const { count, error } = await SIREDE.db.from('redes_areas_atuacao').select('id', { count: 'exact', head: true }).eq('rede_id', rede.id);
         if (!vivo()) return;
         if (error) return falhar(mensagemDeErro(error));
         if (count > 0) return falhar('Esta rede já tem área de atuação cadastrada. Remova a área antes de alterar o tipo.');
       }
 
       const consulta = rede
-        ? SIPRO.db.from('redes').update(dados).eq('id', rede.id)
-        : SIPRO.db.from('redes').insert(dados);
+        ? SIREDE.db.from('redes').update(dados).eq('id', rede.id)
+        : SIREDE.db.from('redes').insert(dados);
       const { data, error } = await consulta.select(COLUNAS);
       if (!vivo()) return;
       if (error) return falhar(mensagemDeErro(error));
@@ -184,7 +184,7 @@
 
   async function carregar() {
     const pag = pagina;
-    const { data, error } = await SIPRO.db.from('redes').select(COLUNAS).order('nome');
+    const { data, error } = await SIREDE.db.from('redes').select(COLUNAS).order('nome');
     if (pagina !== pag) return;
     if (error) {
       pag.innerHTML = cabecalho(false) + aviso('Não foi possível carregar as redes.', 'erro') +
@@ -225,17 +225,17 @@
       <div id="rede-novo-form"></div>`;
     formularioRede(q('rede-novo-form'), {
       rede: null,
-      aoSalvar: (nova) => { SIPRO.estado.redeId = nova.id; location.hash = `#/rede/${nova.id}/visao-geral`; },
+      aoSalvar: (nova) => { SIREDE.estado.redeId = nova.id; location.hash = `#/rede/${nova.id}/visao-geral`; },
       aoCancelar: desenharLista,
     });
   }
 
-  SIPRO.modulos.rede = {
+  SIREDE.modulos.rede = {
     async render(el) {
-      el.innerHTML = `<div class="pagina" id="rede-pagina">${SIPRO.ui.carregando()}</div>`;
+      el.innerHTML = `<div class="pagina" id="rede-pagina">${SIREDE.ui.carregando()}</div>`;
       const pag = (pagina = el.querySelector('#rede-pagina'));
       try {
-        const { data, error } = await SIPRO.db.rpc('eh_admin');
+        const { data, error } = await SIREDE.db.rpc('eh_admin');
         if (pagina !== pag) return;
         if (error) { pag.innerHTML = cabecalho(false) + aviso('Não foi possível verificar seu acesso. Recarregue a página.', 'erro'); return; }
         if (data !== true) {
@@ -278,7 +278,7 @@
     });
   }
 
-  SIPRO.modulos['rede-dados'] = {
+  SIREDE.modulos['rede-dados'] = {
     render(el, amb) { desenharDados(el, amb); },
   };
 
@@ -314,7 +314,7 @@
 
       const botao = q2('cf-salvar');
       botao.disabled = true;
-      const { data, error } = await SIPRO.db.from('redes').update({ situacao: nova }).eq('id', r.id).select(COLUNAS);
+      const { data, error } = await SIREDE.db.from('redes').update({ situacao: nova }).eq('id', r.id).select(COLUNAS);
       if (!el.isConnected) return;
       if (error || !data || !data.length) {
         q2('cf-aviso').innerHTML = aviso(error ? mensagemDeErro(error) : 'Nenhuma alteração foi salva. Verifique sua permissão e tente novamente.', 'erro');
@@ -326,7 +326,7 @@
     });
   }
 
-  SIPRO.modulos['rede-config'] = {
+  SIREDE.modulos['rede-config'] = {
     render(el, amb) { desenharConfig(el, amb); },
   };
 })();

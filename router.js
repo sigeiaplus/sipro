@@ -1,9 +1,9 @@
-/* SIPRO+ — Navegação entre telas (sem recarregar a página)
+/* SIREDE+ — Navegação entre telas (sem recarregar a página)
    Cada item do menu carrega, sob demanda, o arquivo JS do seu módulo.
-   Cada módulo se registra com: SIPRO.modulos.<id> = { render(el, ctx), destruir?() } */
+   Cada módulo se registra com: SIREDE.modulos.<id> = { render(el, ctx), destruir?() } */
 (() => {
   'use strict';
-  const SIPRO = (window.SIPRO = window.SIPRO || { modulos: {} });
+  const SIREDE = (window.SIREDE = window.SIREDE || { modulos: {} });
 
   const icone = (d) => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
 
@@ -58,8 +58,8 @@
       Usado pelo roteador e pelas seções internas da rede. */
   const emCarga = {};
   function carregarModulo(chave, arquivo) {
-    if (SIPRO.modulos[chave]) return Promise.resolve(SIPRO.modulos[chave]);
-    if (emCarga[arquivo]) return emCarga[arquivo].then(() => (SIPRO.modulos[chave] || Promise.reject(new Error('módulo não registrado'))));
+    if (SIREDE.modulos[chave]) return Promise.resolve(SIREDE.modulos[chave]);
+    if (emCarga[arquivo]) return emCarga[arquivo].then(() => (SIREDE.modulos[chave] || Promise.reject(new Error('módulo não registrado'))));
     emCarga[arquivo] = new Promise((ok, falha) => {
       const s = document.createElement('script');
       s.src = arquivo;
@@ -68,7 +68,7 @@
       document.head.appendChild(s);
     });
     emCarga[arquivo].catch(() => { delete emCarga[arquivo]; });
-    return emCarga[arquivo].then(() => (SIPRO.modulos[chave] || Promise.reject(new Error('módulo não registrado'))));
+    return emCarga[arquivo].then(() => (SIREDE.modulos[chave] || Promise.reject(new Error('módulo não registrado'))));
   }
 
   async function navegar() {
@@ -82,16 +82,16 @@
       else a.removeAttribute('aria-current');
     });
     document.getElementById('topo-titulo').textContent = (ROTAS.find((r) => r.id === rota.pai) || rota).rotulo;
-    document.title = `${rota.rotulo} | SIPRO+`;
-    if (SIPRO.ui) SIPRO.ui.fecharMenu();
+    document.title = `${rota.rotulo} | SIREDE+`;
+    if (SIREDE.ui) SIREDE.ui.fecharMenu();
 
     // Mesmo módulo e só mudou a seção/parâmetro: o módulo atualiza sem recarregar tudo.
-    if (moduloAtual && moduloAtual === SIPRO.modulos[rota.id] && moduloAtual.atualizar && moduloAtual.atualizar(alvo.params)) return;
+    if (moduloAtual && moduloAtual === SIREDE.modulos[rota.id] && moduloAtual.atualizar && moduloAtual.atualizar(alvo.params)) return;
 
     const el = conteudo();
     if (moduloAtual && moduloAtual.destruir) moduloAtual.destruir();
     moduloAtual = null;
-    el.innerHTML = SIPRO.ui.carregando();
+    el.innerHTML = SIREDE.ui.carregando();
 
     try {
       const modulo = await carregarModulo(rota.id, rota.arquivo);
@@ -125,8 +125,8 @@
     moduloAtual = null;
     conteudo().innerHTML = '';
     history.replaceState(null, '', location.pathname + location.search);
-    document.title = 'Entrar | SIPRO+';
+    document.title = 'Entrar | SIREDE+';
   }
 
-  SIPRO.router = { ROTAS, ativar, desativar, carregarModulo };
+  SIREDE.router = { ROTAS, ativar, desativar, carregarModulo };
 })();

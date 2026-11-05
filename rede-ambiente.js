@@ -1,12 +1,12 @@
-/* SIPRO+ — Ambiente da rede (#/rede/<id da rede>/<seção>)
+/* SIREDE+ — Ambiente da rede (#/rede/<id da rede>/<seção>)
    A rede é o centro do ambiente administrativo: este módulo identifica a rede pelo ID no banco,
    mostra o cabeçalho e a navegação interna e abre cada seção.
    Todas as consultas das seções são filtradas pelo ID da rede; quem decide o acesso é o RLS do Supabase.
    Seções ainda não implementadas mostram apenas "Em desenvolvimento" (sem dados inventados). */
 (() => {
   'use strict';
-  const SIPRO = window.SIPRO;
-  const esc = SIPRO.ui.escapar;
+  const SIREDE = window.SIREDE;
+  const esc = SIREDE.ui.escapar;
 
   /* Seções: com `modulo` + `arquivo` = módulo próprio; sem eles = seção interna deste arquivo. */
   const SECOES = [
@@ -48,14 +48,14 @@
     get rede() { return rede; },
     aoSalvar(nova) { // seção salvou alteração na rede: atualiza o cabeçalho
       rede = { ...rede, ...nova };
-      SIPRO.estado.redeId = rede.id;
+      SIREDE.estado.redeId = rede.id;
       if (pagina) desenharCabecalho();
     },
   };
 
   /* ---------- Seções internas ---------- */
   async function contar(tabela, redeId) {
-    const { count, error } = await SIPRO.db.from(tabela).select('*', { count: 'exact', head: true }).eq('rede_id', redeId);
+    const { count, error } = await SIREDE.db.from(tabela).select('*', { count: 'exact', head: true }).eq('rede_id', redeId);
     return error ? null : count;
   }
 
@@ -94,14 +94,14 @@
   });
 
   function moduloDaSecao(def) {
-    if (def.modulo) return SIPRO.router.carregarModulo(def.modulo, def.arquivo);
+    if (def.modulo) return SIREDE.router.carregarModulo(def.modulo, def.arquivo);
     if (def.interna === 'visao') return Promise.resolve(secaoVisaoGeral);
     return Promise.resolve(secaoEmDesenvolvimento(def.rotulo));
   }
 
   /* ---------- Painel da rede ---------- */
   function desenharCabecalho() {
-    const { TIPOS, SITUACOES, rotulo } = SIPRO.rede;
+    const { TIPOS, SITUACOES, rotulo } = SIREDE.rede;
     q('rede-cab').innerHTML = `
       <div><h2>${esc(rede.nome)}</h2><p>${esc(rotulo(TIPOS, rede.tipo))}</p></div>
       <span class="badge badge--${esc(rede.situacao)}">${esc(rotulo(SITUACOES, rede.situacao))}</span>`;
@@ -133,12 +133,12 @@
       else a.removeAttribute('aria-current');
     });
     q('rede-secao-titulo').textContent = def.rotulo;
-    document.title = `${def.rotulo} · ${rede.nome} | SIPRO+`;
+    document.title = `${def.rotulo} · ${rede.nome} | SIREDE+`;
 
     if (modSecao && modSecao.destruir) modSecao.destruir();
     modSecao = null;
     const alvo = document.createElement('div'); // elemento novo a cada abertura: respostas atrasadas de seções anteriores são descartadas
-    alvo.innerHTML = SIPRO.ui.carregando();
+    alvo.innerHTML = SIREDE.ui.carregando();
     q('rede-secao').replaceChildren(alvo);
 
     try {
@@ -159,18 +159,18 @@
     return '<div><a class="btn btn--sec" href="#/rede">Voltar para as redes</a></div>';
   }
 
-  SIPRO.modulos['rede-ambiente'] = {
+  SIREDE.modulos['rede-ambiente'] = {
     async render(el, ctx) {
       const { redeId, secao } = ctx.params;
       rede = null; modSecao = null; secaoAtual = null;
-      el.innerHTML = `<div class="pagina" id="rede-ambiente-pagina">${SIPRO.ui.carregando()}</div>`;
+      el.innerHTML = `<div class="pagina" id="rede-ambiente-pagina">${SIREDE.ui.carregando()}</div>`;
       const pag = (pagina = el.querySelector('#rede-ambiente-pagina'));
       try {
         // rede.js traz os rótulos compartilhados (tipos e situações) e as seções Dados e Configurações
-        await SIPRO.router.carregarModulo('rede', 'rede.js');
+        await SIREDE.router.carregarModulo('rede', 'rede.js');
         if (pagina !== pag) return;
 
-        const acesso = await SIPRO.db.rpc('eh_admin');
+        const acesso = await SIREDE.db.rpc('eh_admin');
         if (pagina !== pag) return;
         if (acesso.error) { pag.innerHTML = aviso('Não foi possível verificar seu acesso. Recarregue a página.', 'erro'); return; }
         if (acesso.data !== true) {
@@ -179,12 +179,12 @@
         }
 
         // A rede é identificada pelo ID no banco. Se o RLS não liberar, a consulta volta vazia.
-        const { data, error } = await SIPRO.db.from('redes').select(SIPRO.rede.COLUNAS).eq('id', redeId).maybeSingle();
+        const { data, error } = await SIREDE.db.from('redes').select(SIREDE.rede.COLUNAS).eq('id', redeId).maybeSingle();
         if (pagina !== pag) return;
         if (error) {
           pag.innerHTML = aviso('Não foi possível carregar a rede.', 'erro') +
             '<div><button type="button" class="btn btn--sec" id="rede-retentar">Tentar novamente</button></div>' + voltar();
-          q('rede-retentar').addEventListener('click', () => SIPRO.modulos['rede-ambiente'].render(el, ctx));
+          q('rede-retentar').addEventListener('click', () => SIREDE.modulos['rede-ambiente'].render(el, ctx));
           return;
         }
         if (!data) {
@@ -193,7 +193,7 @@
         }
 
         rede = data;
-        SIPRO.estado.redeId = rede.id;
+        SIREDE.estado.redeId = rede.id;
         desenharPainel();
         await abrirSecao(secao);
       } catch (_) {

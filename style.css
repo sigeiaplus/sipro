@@ -345,7 +345,7 @@ a.btn { display: inline-flex; align-items: center; justify-content: center; text
 .field__info:empty { display: none; }
 
 /* =====================================================
-   Loader padrão (SIPRO.ui.carregando) — anel laranja girando
+   Loader padrão (SIREDE.ui.carregando) — anel laranja girando
    ===================================================== */
 .carregando {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;

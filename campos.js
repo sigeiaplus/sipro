@@ -1,12 +1,12 @@
-/* SIPRO+ — Campos personalizados: caixa suspensa, data e hora.
+/* SIREDE+ — Campos personalizados: caixa suspensa, data e hora.
    Troca todo <select>, <input type="date"> e <input type="time"> pelo visual do sistema.
    O campo nativo continua no DOM (escondido), então .value, change, input, disabled, required, min/max
    e as opções carregadas depois (ex.: municípios) continuam funcionando sem mudar o código das telas.
    Para manter um campo nativo em algum lugar, use o atributo data-nativo. */
 (() => {
   'use strict';
-  const SIPRO = (window.SIPRO = window.SIPRO || { modulos: {} });
-  if (SIPRO.campos) return;
+  const SIREDE = (window.SIREDE = window.SIREDE || { modulos: {} });
+  if (SIREDE.campos) return;
 
   const SELETOR = 'select, input[type="date"], input[type="time"]';
   const MIN_PESQUISA = 10; // a lista ganha campo de pesquisa a partir deste número de opções
@@ -894,7 +894,7 @@
     raiz.querySelectorAll(SELETOR).forEach(melhorarUm);
   }
 
-  SIPRO.campos = { melhorar, fechar: () => fecharPopup(false) };
+  SIREDE.campos = { melhorar, fechar: () => fecharPopup(false) };
 
   melhorar(document);
   new MutationObserver((muts) => {
