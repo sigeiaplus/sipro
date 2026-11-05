@@ -6,7 +6,7 @@
 
   const SUPABASE_URL = 'https://jchulvfsrelekgtkgrxt.supabase.co';
   const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_rdnEh4GIQVHd0t0ZNgrzow_z5MdjcgY';
-  const CPF_DOMINIO = 'sirede.app'; // CPF vira o e-mail "<cpf>@sirede.app" no Supabase Auth
+  const CPF_DOMINIO = 'sipro.app'; // CPF vira o e-mail "<cpf>@sirede.app" no Supabase Auth
 
   const SIREDE = (window.SIREDE = window.SIREDE || { modulos: {} });
 
