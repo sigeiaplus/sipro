@@ -6,6 +6,16 @@
   const SIPRO = (window.SIPRO = window.SIPRO || { modulos: {} });
   const $ = (id) => document.getElementById(id);
 
+  /* Campos personalizados (caixa suspensa, data e hora): campos.js é carregado aqui, ao lado deste arquivo,
+     para não depender do index.html. Ele troca sozinho todo select/date/time, inclusive em telas criadas depois. */
+  (() => {
+    const atual = document.currentScript && document.currentScript.src;
+    const s = document.createElement('script');
+    s.src = (atual ? atual.replace(/[^/]*(\?.*)?$/, '') : '') + 'campos.js';
+    s.defer = true;
+    document.head.appendChild(s);
+  })();
+
   /* ---------- Utilitários compartilhados ---------- */
   const escapar = (t) => String(t).replace(/[&<>"']/g, (c) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -50,6 +60,62 @@
     $('btn-menu').setAttribute('aria-expanded', 'true');
   }
 
+  /* ---------- Máscaras e validações compartilhadas (SIPRO.util) ----------
+     Usadas pelo cadastro de Pessoas e por futuros módulos. O banco valida CPF/CNPJ de novo (nunca só o frontend). */
+  const soDigitos = (t) => String(t || '').replace(/\D/g, '');
+
+  function mascaraCpf(t) {
+    const d = soDigitos(t).slice(0, 11);
+    let r = d.slice(0, 3);
+    if (d.length > 3) r += '.' + d.slice(3, 6);
+    if (d.length > 6) r += '.' + d.slice(6, 9);
+    if (d.length > 9) r += '-' + d.slice(9);
+    return r;
+  }
+  function mascaraCnpj(t) {
+    const d = soDigitos(t).slice(0, 14);
+    let r = d.slice(0, 2);
+    if (d.length > 2) r += '.' + d.slice(2, 5);
+    if (d.length > 5) r += '.' + d.slice(5, 8);
+    if (d.length > 8) r += '/' + d.slice(8, 12);
+    if (d.length > 12) r += '-' + d.slice(12);
+    return r;
+  }
+  function mascaraTelefone(t) {
+    const d = soDigitos(t).slice(0, 11);
+    if (d.length <= 2) return d;
+    const corte = d.length === 11 ? 5 : 4;
+    const resto = d.slice(2);
+    return `(${d.slice(0, 2)}) ` + (resto.length <= corte ? resto : `${resto.slice(0, corte)}-${resto.slice(corte)}`);
+  }
+  const mascaraCep = (t) => {
+    const d = soDigitos(t).slice(0, 8);
+    return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d;
+  };
+  function cpfValido(c) {
+    if (!/^\d{11}$/.test(c) || /^(\d)\1+$/.test(c)) return false;
+    const digito = (n) => {
+      let soma = 0;
+      for (let i = 0; i < n; i++) soma += Number(c[i]) * (n + 1 - i);
+      const r = (soma * 10) % 11;
+      return r === 10 ? 0 : r;
+    };
+    return digito(9) === Number(c[9]) && digito(10) === Number(c[10]);
+  }
+  function cnpjValido(c) {
+    if (!/^\d{14}$/.test(c) || /^(\d)\1+$/.test(c)) return false;
+    const digito = (n) => {
+      const pesos = n === 12 ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2] : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+      let soma = 0;
+      for (let i = 0; i < n; i++) soma += Number(c[i]) * pesos[i];
+      const resto = soma % 11;
+      return resto < 2 ? 0 : 11 - resto;
+    };
+    return digito(12) === Number(c[12]) && digito(13) === Number(c[13]);
+  }
+  const emailValido = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
+
+  SIPRO.util = { soDigitos, mascaraCpf, mascaraCnpj, mascaraTelefone, mascaraCep, cpfValido, cnpjValido, emailValido };
   SIPRO.ui = { escapar, telaEstrutural, fecharMenu, carregando };
   SIPRO.estado = { redeId: null }; // rede selecionada (ID no banco), compartilhada entre as seções do ambiente da rede
 

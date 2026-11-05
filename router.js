@@ -14,6 +14,8 @@
       icone: '<circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M12 7.5v4M12 11.5l-5.5 5.5M12 11.5l5.5 5.5"/>' },
     // Ambiente da rede: acessado por #/rede/<id>/<seção>, nunca por #/rede-ambiente
     { id: 'rede-ambiente', rotulo: 'Gestão da Rede', arquivo: 'rede-ambiente.js', pai: 'rede', oculta: true, aninhada: true, icone: '' },
+    { id: 'pessoas', rotulo: 'Pessoas', arquivo: 'pessoas.js',
+      icone: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2.2"/><path d="M5.5 16c.5-1.8 1.9-2.6 3.5-2.6s3 .8 3.5 2.6M15 10h3M15 14h3"/>' },
     { id: 'unidades', rotulo: 'Unidades Escolares', arquivo: 'unidades.js',
       icone: '<path d="M3 21h18M5 21V9l7-5 7 5v12M10 21v-6h4v6"/>' },
     { id: 'usuarios', rotulo: 'Usuários', arquivo: 'usuarios.js',
@@ -89,7 +91,7 @@
     const el = conteudo();
     if (moduloAtual && moduloAtual.destruir) moduloAtual.destruir();
     moduloAtual = null;
-    el.innerHTML = '<p class="carregando-modulo" role="status">Carregando...</p>';
+    el.innerHTML = SIPRO.ui.carregando();
 
     try {
       const modulo = await carregarModulo(rota.id, rota.arquivo);
