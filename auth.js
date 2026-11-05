@@ -1,4 +1,4 @@
-/* SIPRO+ — Autenticação e sessão (Supabase Auth)
+/* SIREDE+ — Autenticação e sessão (Supabase Auth)
    Único lugar que cria o cliente do Supabase. Os demais arquivos usam SIPRO.auth.
    Só a chave PÚBLICA (publishable) pode ficar aqui; a segurança real vem do RLS. */
 (() => {

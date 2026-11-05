@@ -1,4 +1,4 @@
-/* SIPRO+ — Dashboard principal */
+/* SIREDE+ — Dashboard principal */
 (() => {
   'use strict';
   const SIPRO = window.SIPRO;

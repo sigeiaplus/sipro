@@ -81,7 +81,21 @@
     return error ? { erro: mensagemDeErro(error) } : { dados: data || [] };
   }
 
-  SIPRO.pessoas = { TIPOS, SITUACOES, COLUNAS, nomeDe, documentoDe, buscar };
+  /** Cadastro completo de uma pessoa pelo id (para Usuários, Responsáveis, Profissionais, Alunos). */
+  async function obter(id) {
+    const { data, error } = await SIPRO.db.from('pessoas').select(COLUNAS).eq('id', id).maybeSingle();
+    return error ? { erro: mensagemDeErro(error) } : { dados: data || null };
+  }
+
+  /** Procura pelo CPF (tipo 'fisica') ou CNPJ (tipo 'juridica'). Serve para reaproveitar o cadastro em vez de duplicar. */
+  async function porDocumento(tipo, documento) {
+    const d = U.soDigitos(documento);
+    if (!d) return { dados: null };
+    const { data, error } = await SIPRO.db.from('pessoas').select(COLUNAS_LISTA).eq(tipo === 'juridica' ? 'cnpj' : 'cpf', d).maybeSingle();
+    return error ? { erro: mensagemDeErro(error) } : { dados: data || null };
+  }
+
+  SIPRO.pessoas = { TIPOS, SITUACOES, COLUNAS, nomeDe, documentoDe, buscar, obter, porDocumento };
 
   /* ---------- Estado da tela ---------- */
   let pagina = null;         // elemento da tela atual; null quando a tela foi fechada
@@ -489,7 +503,9 @@
       if (!cpf) erros.cpf = 'Informe o CPF.';
       else if (!U.cpfValido(cpf)) erros.cpf = 'CPF inválido.';
       if (!v.nome.trim()) erros.nome = 'Informe o nome completo.';
-      if (v.nasc && (v.nasc > hojeISO() || v.nasc < '1900-01-01')) erros.nasc = 'Data de nascimento inválida.';
+      // Com o campo personalizado, data digitada incompleta/inexistente deixa o valor real vazio: não pode ser salva como "sem data".
+      if (v.nascTexto && !v.nasc) erros.nasc = 'Data de nascimento inválida ou incompleta. Use dd/mm/aaaa.';
+      else if (v.nasc && (v.nasc > hojeISO() || v.nasc < '1900-01-01')) erros.nasc = 'Data de nascimento inválida.';
       if (v.sexo && !SEXOS.some((s) => s[0] === v.sexo)) erros.sexo = 'Selecione uma opção válida.';
     } else {
       if (!cnpj) erros.cnpj = 'Informe o CNPJ.';
@@ -523,8 +539,10 @@
 
   async function salvar(p, tipo) {
     const pg = pagina;
+    const campoNasc = q('fp-nasc').querySelector('.cx__texto');
     const { erros, dados } = validar({
       tipo,
+      nascTexto: campoNasc ? campoNasc.value : '',
       cpf: q('pe-cpf').value, cnpj: q('pe-cnpj').value,
       nome: q('pe-nome').value, razao: q('pe-razao').value, fantasia: q('pe-fantasia').value,
       nasc: q('pe-nasc').value, sexo: q('pe-sexo').value,
@@ -545,6 +563,18 @@
       q('pe-aviso').innerHTML = aviso(texto, 'erro');
       botao.disabled = false;
     };
+
+    // Duplicidade: confere antes de gravar (mensagem clara e atalho para o cadastro existente).
+    // A garantia final é o índice único do banco; este passo só evita a ida e volta com erro.
+    const colDoc = tipo === 'juridica' ? 'cnpj' : 'cpf';
+    const dup = await SIPRO.db.from('pessoas').select('id').eq(colDoc, dados[colDoc]).maybeSingle();
+    if (pagina !== pg) return;
+    if (!dup.error && dup.data && (!p || dup.data.id !== p.id)) {
+      const err = { code: '23505', message: colDoc };
+      falhar(mensagemDeErro(err));
+      await oferecerExistente(err, dados, p, pg);
+      return;
+    }
 
     const consulta = p
       ? SIPRO.db.from('pessoas').update(dados).eq('id', p.id)           // tipo e situação não mudam aqui

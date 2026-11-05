@@ -1,4 +1,4 @@
-/* SIPRO+ — Tela de login (interface). A autenticação fica em auth.js. */
+/* SIREDE+ — Tela de login (interface). A autenticação fica em auth.js. */
 (() => {
   'use strict';
   const SIPRO = (window.SIPRO = window.SIPRO || { modulos: {} });

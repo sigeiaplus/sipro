@@ -1,4 +1,4 @@
-/* SIPRO+ — Login | laranja como cor principal */
+/* SIREDE+ — Login | laranja como cor principal */
 :root {
   --laranja: #F26A1B;
   --laranja-escuro: #C74E0A;
@@ -46,6 +46,7 @@ h1, h2, p { margin: 0; }
   display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px;
   background: #fff; color: var(--laranja); font-weight: 800; font-size: 22px;
 }
+.brand__mark img { display: block; width: 28px; height: auto; }
 .brand__name { font-weight: 700; font-size: 24px; letter-spacing: -.01em; }
 .brand__name b { color: var(--marinho); }
 .brand__body { max-width: 440px; }

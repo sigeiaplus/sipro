@@ -1,4 +1,4 @@
-/* SIPRO+ — Inicialização geral: troca entre login e ambiente administrativo,
+/* SIREDE+ — Inicialização geral: troca entre login e ambiente administrativo,
    cabeçalho, menu móvel, logout e utilitários compartilhados (SIPRO.ui).
    O código de cada tela fica no arquivo do seu módulo. */
 (() => {
